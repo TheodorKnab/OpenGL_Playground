@@ -1,0 +1,2 @@
+D:/FHTech/Sem2/SPG/OpenGLProject/spg_project/include/glm/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+D:/FHTech/Sem2/SPG/OpenGLProject/spg_project/include/glm/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
