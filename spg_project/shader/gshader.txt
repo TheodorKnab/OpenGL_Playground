@@ -10,6 +10,7 @@ out vec3 fColor;
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
+
 void build_house(vec4 position)
 {    
     fColor = gs_in[0].color; // gs_in[0] since there's only one input vertex
@@ -22,7 +23,6 @@ void build_house(vec4 position)
     gl_Position = position +  projection * view * model * vec4( 0.2,  0.2, 0.0, 0.0); // 4:top-right
     EmitVertex();
     gl_Position = position +  projection * view * model * vec4( 0.0,  0.4, 0.0, 0.0); // 5:top
-    fColor = vec3(1.0, 1.0, 1.0);
     EmitVertex();
     EndPrimitive();
 }

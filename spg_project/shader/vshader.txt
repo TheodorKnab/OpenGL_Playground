@@ -11,8 +11,10 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
+uniform sampler3D densityTexture;
+
 void main()
 {
-    vs_out.color = vec3(1,1,1);
-    gl_Position = projection * view * model * vec4(aPos.x, aPos.y, aPos.z, 1.0); 
+    gl_Position = projection * view * model * vec4(aPos.x, aPos.y, aPos.z, 1.0); 	
+    vs_out.color = texture(densityTexture, vec3(0,0,0)).rgb;
 }

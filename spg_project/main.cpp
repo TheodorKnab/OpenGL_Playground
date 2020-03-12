@@ -38,11 +38,22 @@ static const GLfloat materialShininess = 20.0;
 
 
 float points[] = {
-	-0.5f,  0.5f, 0.5f,
-	 0.5f,  0.5f, 0.5f,
-	 0.5f, -0.5f, 0.5f,
-	-0.5f, -0.5f, 0.5f,
+	-0.5f,  0.5f, -0.5f,
+	 0.5f,  0.5f, -0.5f,
+	 0.5f, -0.5f, -0.5f,
+	-0.5f, -0.5f, -0.5f,
 
+};
+
+float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+	   // positions   // texCoords
+	   -1.0f,  1.0f,  0.0f, 1.0f,
+	   -1.0f, -1.0f,  0.0f, 0.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+
+	   -1.0f,  1.0f,  0.0f, 1.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+		1.0f,  1.0f,  1.0f, 1.0f
 };
 
 glm::mat4 proj = glm::mat4(1.0f);
@@ -50,7 +61,7 @@ glm::mat4 view = glm::mat4(1.0f);
 glm::mat4 model = glm::mat4(1.0f);
 glm::mat4 trans = glm::mat4(1.0f);
 
-Shader* marching_cubes_shader;
+Shader* marchingCubesShader;
 unsigned int VAO, VBO, EBO;
 unsigned int diffuseMap, specMap, normalMap;
 
@@ -86,6 +97,15 @@ const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
 std::vector<unsigned int> depthMap;
 Shader* simpleDepthShader;
 
+Shader* densityShader;
+GLuint densityTexture;
+unsigned int TextureWidth = 96;
+unsigned int TextureDepth = 96;
+unsigned int TextureHeigth = 256;
+
+unsigned int quadVAO, quadVBO;
+GLenum* DrawBuffers = new GLenum[2];
+
 //initialization of the application.
 void init()
 {
@@ -107,10 +127,9 @@ void init()
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
-
-
+	
 	// position attribute
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
 	glEnableVertexAttribArray(0);
 	// color attribute
 	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));	
@@ -123,12 +142,94 @@ void init()
 	//glEnableVertexAttribArray(2);
 
 	//Basic Default Shadow Mapping
-	marching_cubes_shader = new Shader("shader/vshader.txt", "shader/fshader.txt", "shader/gshader.txt");
-	//marching_cubes_shader = new Shader("shader/vshader.txt", "shader/fshader.txt");
+	marchingCubesShader = new Shader("shader/vshader.txt", "shader/fshader.txt", "shader/gshader.txt");
+	//marchingCubesShader = new Shader("shader/vshader.txt", "shader/fshader.txt");
 	//simpleDepthShader = new Shader("shader/vshader_depth.txt", "shader/fshader_depth.txt");
-
 	glBindVertexArray(0);
 
+
+	glGenBuffers(1, &quadVBO);
+	glGenVertexArrays(1, &quadVAO);
+	glBindVertexArray(quadVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	densityShader = new Shader("shader/vshader_densityTexture.txt", "shader/fshader_densityTexture.txt", "shader/gshader_densityTexture.txt");
+	
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glEnable(GL_TEXTURE_3D);
+	glGenTextures(1, &densityTexture);
+	glBindTexture(GL_TEXTURE_3D, densityTexture);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, TextureWidth, TextureHeigth, TextureDepth, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	//glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, densityTexture, 0, 0);
+	
+	DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glBindTexture(GL_TEXTURE_3D, 0);
+	
+	//glTexImage2D(GL_TEXTURE_3D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	/*glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_3D, 0);
+	//glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, densityTexture, 0);
+	glBindTexture(GL_TEXTURE_3D, densityTexture);
+
+	glGenTextures(1, &normalMap);
+	glBindTexture(GL_TEXTURE_2D, normalMap); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	data = stbi_load("textures/tlumbejo_4K_Normal.jpg", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}*/
+/*
+	for (int i = 0; i < lightPos.size(); i++)
+	{
+		depthMap.push_back(0);
+		depthMapFBO.push_back(0);
+		//depthFBO
+		glGenFramebuffers(1, &depthMapFBO[i]);
+
+		glGenTextures(1, &depthMap[i]);
+		glBindTexture(GL_TEXTURE_2D, depthMap[i]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap[i], 0);
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}*/
+	
 }
 
 void reshape(int w, int h)
@@ -144,6 +245,7 @@ void reshape(int w, int h)
 
 	glMatrixMode(GL_MODELVIEW);
 }
+
 
 
 void geometry(Shader* UsingShader)
@@ -181,15 +283,38 @@ void geometry(Shader* UsingShader)
 	}
 }
 
+void render3DTexture(Shader* UsingShader)
+{
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	UsingShader->use();
+	UsingShader->setInt("lr", glm::clamp(static_cast<int>(cam.getEulerDegRotation().x), 0, 256));
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, densityTexture);
+	glBindVertexArray(quadVAO);
+	//for (int i = 0; i < TextureHeigth; ++i)
+	//{
+		
+		//glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, densityTexture, 0,0);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+	//}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void display()
 {
-	// 1. first render to depth map
+	
 	float near_plane = -5.0f, far_plane = 30;
 
+	//render 3D Texture
+	render3DTexture(densityShader);
 
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glClearColor(0.5f, 0.9f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	//time, ms are taken for sufficient for this exercise 
 	long timeSinceStart = glutGet(GLUT_ELAPSED_TIME);
@@ -215,15 +340,16 @@ void display()
 	view = cam.getTransformationMatrix();
 
 
-	marching_cubes_shader->use();
+	marchingCubesShader->use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, densityTexture);
+	marchingCubesShader->setMat4("projection", proj);
+	marchingCubesShader->setMat4("view", view);
+	model = glm::mat4(1.0f);
+	marchingCubesShader->setMat4("model", model);
 	glBindVertexArray(VAO);
 	glDrawArrays(GL_POINTS, 0, 4);
-	marching_cubes_shader->setMat4("projection", proj);
-	marching_cubes_shader->setMat4("view", view);
-	model = glm::mat4(1.0f);
-	marching_cubes_shader->setMat4("model", model);
-
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
 	glutSwapBuffers();
 }
 
@@ -353,13 +479,13 @@ void keyboard(unsigned char key, int x, int y)
 	if (key == 'r')
 	{
 		//Basic Default Shadow Mapping
-		marching_cubes_shader = new Shader("shader/vshader.txt", "shader/fshader.txt", "shader/gshader.txt");
-		FBOShader = new Shader("shader/vshader_FBO.txt", "shader/fshader_FBO.txt");
-		marching_cubes_shader->use();
-		marching_cubes_shader->setInt("material.diffuse", 0);
-		marching_cubes_shader->setInt("material.specular", 1);
-		marching_cubes_shader->setInt("material.normal", 2);
-		marching_cubes_shader->setInt("shadowMap", 2);
+		marchingCubesShader = new Shader("shader/vshader.txt", "shader/fshader.txt", "shader/gshader.txt");
+		densityShader = new Shader("shader/vshader_densityTexture.txt", "shader/fshader_densityTexture.txt", "shader/gshader_densityTexture.txt");
+		marchingCubesShader->use();
+		marchingCubesShader->setInt("material.diffuse", 0);
+		marchingCubesShader->setInt("material.specular", 1);
+		marchingCubesShader->setInt("material.normal", 2);
+		marchingCubesShader->setInt("shadowMap", 2);
 	}
 
 	//add point
@@ -415,6 +541,8 @@ void mouse_move(int x, int y)
 	}
 	mouse_pos.x = x;
 	mouse_pos.y = y;
+
+	printf("current Texture Z = %i\n", glm::clamp(static_cast<int>(cam.getEulerDegRotation().x), 0, 256));
 }
 
 int main(int argc, char* argv[])
