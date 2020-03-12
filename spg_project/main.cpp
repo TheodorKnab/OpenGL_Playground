@@ -37,59 +37,12 @@ static const GLfloat materialSpecular[] = {1.0, 1.0, 1.0, 1.0};
 static const GLfloat materialShininess = 20.0;
 
 
-float vertices[] = {
-	-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
-	0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f,
-	0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-	0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-	-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
+float points[] = {
+	-0.5f,  0.5f, 0.5f,
+	 0.5f,  0.5f, 0.5f,
+	 0.5f, -0.5f, 0.5f,
+	-0.5f, -0.5f, 0.5f,
 
-	-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-	0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-	0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-	0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-	-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-	-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-
-	-0.5f, 0.5f, 0.5f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-	-0.5f, 0.5f, -0.5f, 1.0f, 1.0f, -1.0f, 0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f,
-	-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-	-0.5f, 0.5f, 0.5f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-
-	0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-	0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-	0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-	0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-	0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-	0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-
-	-0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f,
-	0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, -1.0f, 0.0f,
-	0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
-	0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
-	-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f,
-
-	-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-	0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-	0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-	0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-	-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-	-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f
-};
-
-float quadVertices[] = {
-	// positions   // texCoords
-	-1.0f, 1.0f, 0.0f, 1.0f,
-	-1.0f, -1.0f, 0.0f, 0.0f,
-	1.0f, -1.0f, 1.0f, 0.0f,
-
-	-1.0f, 1.0f, 0.0f, 1.0f,
-	1.0f, -1.0f, 1.0f, 0.0f,
-	1.0f, 1.0f, 1.0f, 1.0f
 };
 
 glm::mat4 proj = glm::mat4(1.0f);
@@ -97,7 +50,7 @@ glm::mat4 view = glm::mat4(1.0f);
 glm::mat4 model = glm::mat4(1.0f);
 glm::mat4 trans = glm::mat4(1.0f);
 
-Shader* ShadowMapShader;
+Shader* marching_cubes_shader;
 unsigned int VAO, VBO, EBO;
 unsigned int diffuseMap, specMap, normalMap;
 
@@ -141,245 +94,41 @@ void init()
 
 	GLint iMultiSample = 0;
 	GLint iNumSamples = 0;
-	glGetIntegerv(GL_SAMPLE_BUFFERS, &iMultiSample);
-	glGetIntegerv(GL_SAMPLES, &iNumSamples);
-	printf("MSAA on, GL_SAMPLE_BUFFERS = %d, GL_SAMPLES = %d\n", iMultiSample, iNumSamples);
+	//glGetIntegerv(GL_SAMPLE_BUFFERS, &iMultiSample);
+	//glGetIntegerv(GL_SAMPLES, &iNumSamples);
+	//printf("MSAA on, GL_SAMPLE_BUFFERS = %d, GL_SAMPLES = %d\n", iMultiSample, iNumSamples);
 
 
 	//model loading 
 	ourModel = new Model("models/cube.obj");
 
 	glGenBuffers(1, &VBO);
-
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
 
 
 	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), static_cast<void*>(nullptr));
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
 	glEnableVertexAttribArray(0);
+	// color attribute
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));	
+	//glEnableVertexAttribArray(1);
 	// texture coord attribute
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	//normals
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	//glEnableVertexAttribArray(1);
+	////normals
+	//glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	//glEnableVertexAttribArray(2);
 
 	//Basic Default Shadow Mapping
-	ShadowMapShader = new Shader("shader/vshader.txt", "shader/fshader.txt");
-	simpleDepthShader = new Shader("shader/vshader_depth.txt", "shader/fshader_depth.txt");
+	marching_cubes_shader = new Shader("shader/vshader.txt", "shader/fshader.txt", "shader/gshader.txt");
+	//marching_cubes_shader = new Shader("shader/vshader.txt", "shader/fshader.txt");
+	//simpleDepthShader = new Shader("shader/vshader_depth.txt", "shader/fshader_depth.txt");
 
-	//light
-	glGenVertexArrays(1, &lightVAO);
-	glBindVertexArray(lightVAO);
+	glBindVertexArray(0);
 
-	// we only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need (it's already bound, but we do it again for educational purposes)
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), static_cast<void*>(nullptr));
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-
-	//Basic Default Lamp Shading
-	lampShader = new Shader("shader/vshader.txt", "shader/fshader_light.txt");
-
-	//FRAMEBUFFER VBO AND VAO
-	glGenBuffers(1, &VBO_FBO);
-
-	glGenVertexArrays(1, &VAO_FBO);
-	glBindVertexArray(VAO_FBO);
-
-	// 2. copy our vertices array in a buffer for OpenGL to use
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_FBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-
-	// position attribute
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), static_cast<void*>(nullptr));
-	glEnableVertexAttribArray(0);
-	// texture coord attribute
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	//Basic Default FBO
-	FBOShader = new Shader("shader/vshader_FBO.txt", "shader/fshader_FBO.txt");
-
-
-#pragma region FBOs_RBOs
-
-	glGenFramebuffers(1, &FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-	glGenTextures(1, &FBOtexture);
-	glBindTexture(GL_TEXTURE_2D, FBOtexture);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, FBOtexture, 0);
-
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//glDeleteFramebuffers(1, &FBO);
-
-	glGenRenderbuffers(1, &RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-	FBOShader->use();
-	FBOShader->setInt("screenTexture", 0);
-	for (int i = 0; i < lightPos.size(); i++)
-	{
-		depthMap.push_back(0);
-		depthMapFBO.push_back(0);
-		//depthFBO
-		glGenFramebuffers(1, &depthMapFBO[i]);
-
-		glGenTextures(1, &depthMap[i]);
-		glBindTexture(GL_TEXTURE_2D, depthMap[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
-		             nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap[i], 0);
-		glDrawBuffer(GL_NONE);
-		glReadBuffer(GL_NONE);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
-
-#pragma endregion
-
-
-#pragma region texture
-
-
-	glGenTextures(1, &diffuseMap);
-	glBindTexture(GL_TEXTURE_2D, diffuseMap);
-	// all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// load image, create texture and generate mipmaps
-	int width, height, nrChannels;
-
-	stbi_set_flip_vertically_on_load(true);
-	unsigned char* data = stbi_load("textures/tlumbejo_4K_Albedo.jpg", &width, &height, &nrChannels, 0);
-	if (data)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cout << "Failed to load texture" << std::endl;
-	}
-	stbi_image_free(data);
-
-	glGenTextures(1, &specMap);
-	glBindTexture(GL_TEXTURE_2D, specMap);
-	// all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	data = stbi_load("textures/tlumbejo_4K_Gloss.jpg", &width, &height, &nrChannels, 0);
-	if (data)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cout << "Failed to load texture" << std::endl;
-	}
-	stbi_image_free(data);
-
-	glGenTextures(1, &normalMap);
-	glBindTexture(GL_TEXTURE_2D, normalMap);
-	// all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	data = stbi_load("textures/tlumbejo_4K_Normal.jpg", &width, &height, &nrChannels, 0);
-	if (data)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cout << "Failed to load texture" << std::endl;
-	}
-	stbi_image_free(data);
-
-	ShadowMapShader->use();
-	ShadowMapShader->setInt("material.diffuse", 0);
-	ShadowMapShader->setInt("material.specular", 1);
-	ShadowMapShader->setInt("material.normal", 2);
-
-
-#pragma endregion
-
-
-	//glShadeModel(GL_FLAT);
-
-
-	glEnable(GL_DEPTH_TEST);
-	glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
-	glEnable(GL_MULTISAMPLE);
-
-	//glEnable(GL_LIGHTING);
-	//glEnable(GL_LIGHT0);
-	//glEnable(GL_NORMALIZE);
-
-	cam.setPosition(glm::vec3(0, 0.5, -1));
-
-	cam.setRotation(glm::quat(0.0f, 0.0f, 1.0f, 0.0f));
-	//glm::vec3 check = rot_curve.evaluateEuler(1);
-
-	//cout << " x: " << check.x << " y: " << check.y << " z: " << check.z << endl;
-	//select clearing color (color that is used as 'background')
-
-	//set Light
-	glPushMatrix();
-	glTranslated(0, 5, 0);
-	glLightfv(GL_LIGHT0, GL_POSITION, new float[4]{0, 0, 0, 1.0});
-	glPopMatrix();
-
-	// Common Light Props
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, materialSpecular);
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, materialShininess);
 }
 
 void reshape(int w, int h)
@@ -435,37 +184,12 @@ void geometry(Shader* UsingShader)
 void display()
 {
 	// 1. first render to depth map
-	float near_plane = 5.0f, far_plane = 30;
-	for (int i = 0; i < lightPos.size(); i++)
-	{
-		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-		glm::mat4 lightSpaceMatrix;
-		CalcLightSpaceMatrix(near_plane, far_plane, lightPos[i], lightSpaceMatrix);
-
-		simpleDepthShader->use();
-		simpleDepthShader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
-		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
-
-		glClear(GL_DEPTH_BUFFER_BIT);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diffuseMap);
-		glBindVertexArray(VAO);
-		geometry(simpleDepthShader);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0); // 2. then render scene as normal with shadow mapping (using depth map)
-		glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glBindTexture(GL_TEXTURE_2D, depthMap[i]);
-	}
+	float near_plane = -5.0f, far_plane = 30;
 
 
-	// first pass
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClearColor(0.5f, 0.9f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
-	glEnable(GL_DEPTH_TEST);
 
 	//time, ms are taken for sufficient for this exercise 
 	long timeSinceStart = glutGet(GLUT_ELAPSED_TIME);
@@ -490,88 +214,16 @@ void display()
 	view = glm::mat4(1.0f);
 	view = cam.getTransformationMatrix();
 
-	//light
-	for (int i = 0; i < lightPos.size(); i++)
-	{
-		lampShader->use();
-		model = glm::mat4(1.0f);
-		model = translate(model, lightPos[i]);
-		model = scale(model, glm::vec3(0.2f));
 
-		lampShader->setMat4("projection", proj);
-		lampShader->setMat4("view", view);
-		lampShader->setMat4("model", model);
-
-		glBindVertexArray(lightVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-	}
-
-
-	ShadowMapShader->use();
-
-	ShadowMapShader->setMat4("projection", proj);
-	ShadowMapShader->setMat4("view", view);
-	ShadowMapShader->setVec3("viewPos", cam.getPosition());
-
-	ShadowMapShader->setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-	ShadowMapShader->setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
-	ShadowMapShader->setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-	ShadowMapShader->setVec3("material.specular", 0.5f, 0.5f, 0.5f);
-	ShadowMapShader->setFloat("material.shininess", 32.0f);
-
-	ShadowMapShader->setFloat("normalLevel", normalLevel);
-
-	ShadowMapShader->setVec3("light[0].diffuse", 3, 3, 3);
-	ShadowMapShader->setVec3("light[1].diffuse", 2, 2, 1);
-	ShadowMapShader->setVec3("light[0].specular", 3, 3, 3);
-	ShadowMapShader->setVec3("light[1].specular", 5, 5, 5);
-	for (int i = 0; i < lightPos.size(); i++)
-	{
-		ShadowMapShader->setVec3("light[" + std::to_string(i) + "].ambient", 0.1f, 0.1f, 0.1f);
-		//ShadowMapShader->setVec3("light[" + std::to_string(i) + "].diffuse", 0.5, 0.5f, 0.5f);
-		//ShadowMapShader->setVec3("light[" + std::to_string(i) + "].specular", 1.0f, 1.0f, 1.0f);
-		ShadowMapShader->setVec3("light[" + std::to_string(i) + "].position", lightPos[i]);
-
-		glm::mat4 lightSpaceMatrix;
-		CalcLightSpaceMatrix(near_plane, far_plane, lightPos[i], lightSpaceMatrix);
-		ShadowMapShader->setMat4("lightSpaceMatrix[" + std::to_string(i) + "]", lightSpaceMatrix);
-	}
-
-
+	marching_cubes_shader->use();
 	glBindVertexArray(VAO);
+	glDrawArrays(GL_POINTS, 0, 4);
+	marching_cubes_shader->setMat4("projection", proj);
+	marching_cubes_shader->setMat4("view", view);
+	model = glm::mat4(1.0f);
+	marching_cubes_shader->setMat4("model", model);
 
-	//bind Textures
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, diffuseMap);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, specMap);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normalMap);
-	for (int i = 0; i < lightPos.size(); i++)
-	{
-		glActiveTexture(GL_TEXTURE3 + i);
-		glBindTexture(GL_TEXTURE_2D, depthMap[i]);
-
-		ShadowMapShader->setInt("shadowMap[" + std::to_string(i) + "]", 3 + i);
-	}
-
-	geometry(ShadowMapShader);
-
-	//Second Pass
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-	//glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-	//glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	//glClear(GL_COLOR_BUFFER_BIT);
-
-	//FBOShader->use();
-	//glBindVertexArray(VAO_FBO);
-	////glDisable(GL_DEPTH_TEST);
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D, FBOtexture);
-	//glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glutSwapBuffers();
 }
 
@@ -701,13 +353,13 @@ void keyboard(unsigned char key, int x, int y)
 	if (key == 'r')
 	{
 		//Basic Default Shadow Mapping
-		ShadowMapShader = new Shader("shader/vshader.txt", "shader/fshader.txt");
+		marching_cubes_shader = new Shader("shader/vshader.txt", "shader/fshader.txt", "shader/gshader.txt");
 		FBOShader = new Shader("shader/vshader_FBO.txt", "shader/fshader_FBO.txt");
-		ShadowMapShader->use();
-		ShadowMapShader->setInt("material.diffuse", 0);
-		ShadowMapShader->setInt("material.specular", 1);
-		ShadowMapShader->setInt("material.normal", 2);
-		ShadowMapShader->setInt("shadowMap", 2);
+		marching_cubes_shader->use();
+		marching_cubes_shader->setInt("material.diffuse", 0);
+		marching_cubes_shader->setInt("material.specular", 1);
+		marching_cubes_shader->setInt("material.normal", 2);
+		marching_cubes_shader->setInt("shadowMap", 2);
 	}
 
 	//add point
