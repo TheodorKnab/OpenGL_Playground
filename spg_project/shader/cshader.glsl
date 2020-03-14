@@ -17,7 +17,7 @@ void main()
 	//Pillars
 	for(int i = 0;i < pillars.length(); ++i)
 	{
-		f += clamp(((0.15/ length(pos.xy - vec2(pillars[i].x + 0.1 * sin(10 * pos.z), pillars[i].y + 0.1 * cos(10 * pos.z)))) - 1) * 1000000,0.0,1.0);		
+		f += clamp(((0.15/ length(pos.xy - vec2(pillars[i].x + 0.1 * sin(10 * pos.z), pillars[i].y + 0.1 * cos(10 * pos.z)))) - 1) * 499999.0,0.0,1.0);		
 	}
 	
 	//Negative Pillar

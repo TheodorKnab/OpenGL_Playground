@@ -7,5 +7,5 @@ uniform sampler3D densityTexture;
 
 void main()
 {
-    FragColor = vec4(texture(densityTexture, vec3(texCoords.xy,lr).rgb, 1));
+    FragColor = vec4(texture(densityTexture, vec3(texCoords.xy,lr).xyz).rrr, 1.0);
 }  

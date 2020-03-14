@@ -109,9 +109,8 @@ bool wireframeMode = false;
 
 void loadShaders() {
 	//Basic Default Shadow Mapping
-	marchingCubesShader = new Shader("shader/vshader.txt", "shader/fshader.txt");//, "shader/gshader.txt");
-	densityShader = new Shader("shader/vshader_densityTexture.txt", "shader/fshader_densityTexture.txt", "shader/gshader_densityTexture.txt");
-	computeShader3DTexture = new Shader("shader/cshader.txt");
+	marchingCubesShader = new Shader("shader/vshader.glsl", "shader/fshader.glsl");//, "shader/gshader.glsl");
+	computeShader3DTexture = new Shader("shader/cshader.glsl");
 }
 
 //initialization of the application.
@@ -140,20 +139,6 @@ void init()
 	// position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
 	glEnableVertexAttribArray(0);
-	// color attribute
-	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));	
-	//glEnableVertexAttribArray(1);
-	// texture coord attribute
-	//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	//glEnableVertexAttribArray(1);
-	////normals
-	//glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-	//glEnableVertexAttribArray(2);
-
-	//Basic Default Shadow Mapping
-	//marchingCubesShader = new Shader("shader/vshader.txt", "shader/fshader.txt", "shader/gshader.txt");
-	//marchingCubesShader = new Shader("shader/vshader.txt", "shader/fshader.txt");
-	//simpleDepthShader = new Shader("shader/vshader_depth.txt", "shader/fshader_depth.txt");
 	glBindVertexArray(0);
 
 
@@ -168,10 +153,7 @@ void init()
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
-	//densityShader = new Shader("shader/vshader_densityTexture.txt", "shader/fshader_densityTexture.txt", "shader/gshader_densityTexture.txt");
 	loadShaders();
-	//glGenFramebuffers(1, &FBO);
-	//glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glEnable(GL_TEXTURE_3D);
 	glGenTextures(1, &densityTexture);
 	glBindTexture(GL_TEXTURE_3D, densityTexture);
@@ -184,59 +166,10 @@ void init()
 	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8);
 	err = glGetError();
 	glBindTexture(GL_TEXTURE_3D, 0);
-	//glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, densityTexture, 0, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	//glTexImage2D(GL_TEXTURE_3D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
-	/*glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_3D, 0);
-	//glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, densityTexture, 0);
-	glBindTexture(GL_TEXTURE_3D, densityTexture);
-
-	glGenTextures(1, &normalMap);
-	glBindTexture(GL_TEXTURE_2D, normalMap); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	data = stbi_load("textures/tlumbejo_4K_Normal.jpg", &width, &height, &nrChannels, 0);
-	if (data)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cout << "Failed to load texture" << std::endl;
-	}*/
-/*
-	for (int i = 0; i < lightPos.size(); i++)
-	{
-		depthMap.push_back(0);
-		depthMapFBO.push_back(0);
-		//depthFBO
-		glGenFramebuffers(1, &depthMapFBO[i]);
-
-		glGenTextures(1, &depthMap[i]);
-		glBindTexture(GL_TEXTURE_2D, depthMap[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap[i], 0);
-		glDrawBuffer(GL_NONE);
-		glReadBuffer(GL_NONE);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}*/
-	
 }
 
 
@@ -561,7 +494,7 @@ void mouse_move(int x, int y)
 	mouse_pos.x = x;
 	mouse_pos.y = y;
 
-	printf("current Texture Z = %i\n", glm::clamp(static_cast<int>(cam.getEulerDegRotation().x), 0, 256));
+	//printf("current Texture Z = %i\n", glm::clamp(static_cast<int>(cam.getEulerDegRotation().x), 0, 256));
 }
 
 int main(int argc, char* argv[])
