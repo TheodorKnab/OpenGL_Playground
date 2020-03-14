@@ -16,20 +16,19 @@ uniform sampler3D densityTexture;
 
 void build_house(vec4 position)
 {    
-
+    float scale = 0.1;
     vec4 worldPos = inverse(model) * inverse(view) * inverse(projection) * position;
-    fColor = vec3(texture(densityTexture, vec3(worldPos.x / 95, worldPos.y / 95, worldPos.z / 256)).rrr); 
-    gl_Position = position + projection * view * model * vec4(-0.1, -0.1, 0.0, 0.0); // 1:bottom-left   
+    fColor = vec3(texture(densityTexture, vec3(worldPos.x / 96, worldPos.y / 96, worldPos.z / 256)).rrr); 
+    gl_Position = (position * scale + vec4(-0.1 * scale, -0.1 * scale, 0.0, 0.0)); // 1:bottom-left   
     EmitVertex();   
-    gl_Position = position + projection * view * model * vec4( 0.1, -0.1, 0.0, 0.0); // 2:bottom-right
+    gl_Position = (position * scale + vec4( 0.1 * scale, -0.1 * scale, 0.0, 0.0)); // 2:bottom-right
     EmitVertex();
-    gl_Position = position + projection * view * model * vec4(-0.1, 0.1, 0.0, 0.0); // 3:top-left
+    gl_Position = (position * scale + vec4(-0.1 * scale , 0.1  * scale, 0.0, 0.0)); // 3:top-left
     EmitVertex();
-    gl_Position = position + projection * view * model * vec4( 0.1, 0.1, 0.0, 0.0); // 4:top-right
-    EmitVertex();
-    gl_Position = position + projection * view * model * vec4( 0.0, 0.2, 0.0, 0.0); // 5:top
+    gl_Position = (position * scale + vec4( 0.1 * scale, 0.1 * scale, 0.0, 0.0)); // 4:top-right
     EmitVertex();
     EndPrimitive();
+
 }
 
 void main() {       

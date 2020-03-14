@@ -115,14 +115,14 @@ void init()
 	GLenum err = glewInit();
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
-	const int arraySize = (textureWidth - 1) * (textureDepth * 2 - 1);
+	const int arraySize = (textureWidth - 1) * (textureDepth - 1);
 	
 	//initialize vertices
 	//points = new float[arraySize];
 	
 	for (int i = 0; i < textureWidth - 1; ++i)
 	{
-		for (int j = 0; j < textureDepth * 2 - 1; j += 2)
+		for (int j = 0; j < textureDepth - 1; ++j)
 		{
 			int index = i * textureWidth + j;
 			points.push_back(float(i) * pointScale);
@@ -142,7 +142,7 @@ void init()
 
 	//model loading 
 	ourModel = new Model("models/cube.obj");
-
+	glEnable(GL_DEPTH_TEST);
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
@@ -196,7 +196,7 @@ void reshape(int w, int h)
 	glLoadIdentity();
 	//gluPerspective(60, (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1, 50);
 	proj = glm::perspective(glm::radians(60.0f), static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),
-	                        0.1f, 100.0f);
+	                        0.1f, 300.f);
 
 	glMatrixMode(GL_MODELVIEW);
 }
@@ -206,7 +206,7 @@ void reshape(int w, int h)
 void display()
 {
 	
-	float near_plane = -5.0f, far_plane = 30;
+	float near_plane = 0.1f, far_plane = 300;
 
 	//render 3D Texture
 	
@@ -220,7 +220,7 @@ void display()
 	
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glClearColor(0.5f, 0.9f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//time, ms are taken for sufficient for this exercise 
 	long timeSinceStart = glutGet(GLUT_ELAPSED_TIME);
