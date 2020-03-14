@@ -37,13 +37,9 @@ static const GLfloat materialSpecular[] = {1.0, 1.0, 1.0, 1.0};
 static const GLfloat materialShininess = 20.0;
 
 
-float points[] = {
-	-0.5f,  0.5f, -0.5f,
-	 0.5f,  0.5f, -0.5f,
-	 0.5f, -0.5f, -0.5f,
-	-0.5f, -0.5f, -0.5f,
 
-};
+std::vector<float> points;
+float pointScale = 1;
 
 float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
 	   // positions   // texCoords
@@ -99,9 +95,9 @@ Shader* simpleDepthShader;
 
 Shader *densityShader, *computeShader3DTexture;
 GLuint densityTexture;
-unsigned int TextureWidth = 96;
-unsigned int TextureDepth = 96;
-unsigned int TextureHeigth = 256;
+unsigned int textureWidth = 96;
+unsigned int textureDepth = 96;
+unsigned int textureHeigth = 256;
 
 unsigned int quadVAO, quadVBO;
 GLenum* DrawBuffers = new GLenum[2];
@@ -109,7 +105,7 @@ bool wireframeMode = false;
 
 void loadShaders() {
 	//Basic Default Shadow Mapping
-	marchingCubesShader = new Shader("shader/vshader.glsl", "shader/fshader.glsl");//, "shader/gshader.glsl");
+	marchingCubesShader = new Shader("shader/vshader.glsl", "shader/fshader.glsl", "shader/gshader.glsl");
 	computeShader3DTexture = new Shader("shader/cshader.glsl");
 }
 
@@ -119,6 +115,23 @@ void init()
 	GLenum err = glewInit();
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
+	const int arraySize = (textureWidth - 1) * (textureDepth * 2 - 1);
+	
+	//initialize vertices
+	//points = new float[arraySize];
+	
+	for (int i = 0; i < textureWidth - 1; ++i)
+	{
+		for (int j = 0; j < textureDepth * 2 - 1; j += 2)
+		{
+			int index = i * textureWidth + j;
+			points.push_back(float(i) * pointScale);
+			points.push_back(float(j) * pointScale);
+		}		
+	}
+
+	//points = new float[4]{1,0,0,1};
+	
 	GLint iMultiSample = 0;
 	GLint iNumSamples = 0;
 	//glGetIntegerv(GL_SAMPLE_BUFFERS, &iMultiSample);
@@ -134,10 +147,10 @@ void init()
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(float), &points[0], GL_STATIC_DRAW);
 	
 	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
 
@@ -162,7 +175,7 @@ void init()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, TextureWidth, TextureDepth, TextureHeigth, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeigth, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
 	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8);
 	err = glGetError();
 	glBindTexture(GL_TEXTURE_3D, 0);
@@ -190,73 +203,19 @@ void reshape(int w, int h)
 
 
 
-void geometry(Shader* UsingShader)
-{
-	//render floor
-	model = glm::mat4(1.0f);
-	model = translate(model, glm::vec3(0, -1, 0));
-	model = scale(model, glm::vec3(20, 1, 20));
-
-	model = scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
-	model = glm::rotate(model, glm::radians(-90.f), glm::vec3(1.0f, 0.0f, 0.0f));
-	UsingShader->setFloat("normalLevel", 0);
-	UsingShader->setMat4("model", model);
-	ourModel->Draw(*UsingShader);
-	UsingShader->setFloat("normalLevel", normalLevel);
-	model = glm::mat4(1.0f);
-	// render Cubes
-
-	for (int i = -5; i <= 4; i++)
-	{
-		for (int j = -5; j <= 4; j++)
-		{
-			glm::mat4 model = glm::mat4(1.0f);
-			model = translate(model, glm::vec3(base_cube_pos[0] - i * distanceBetweenCubes,
-			                                   base_cube_pos[1] + (2 * cos(i * cube_height_scale_x) + 2 * cos(
-				                                   j * cube_height_scale_y)),
-			                                   base_cube_pos[2] - j * distanceBetweenCubes));
-			model = glm::rotate(model, (1 + i * -j) * oldTimeSinceStart / 10000.f,
-			                    glm::vec3(glm::abs(cos(i)), glm::abs(cos(j)), 0));
-			model = scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
-			//model = glm::scale(model, glm::vec3(1, cos(i * cube_height_scale_x) + cos(j * cube_height_scale_y) + 1.2f, 1));
-			UsingShader->setMat4("model", model);
-			ourModel->Draw(*UsingShader);
-		}
-	}
-}
-
-void render3DTexture(Shader* UsingShader)
-{
-
-	UsingShader->use();
-	glBindTexture(GL_TEXTURE_3D, densityTexture);
-	//glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	UsingShader->setInt("lr", glm::clamp(static_cast<int>(cam.getEulerDegRotation().x), 0, 256));
-	glActiveTexture(GL_TEXTURE0);
-	glBindVertexArray(quadVAO);
-	glViewport(0, 0, TextureWidth, TextureDepth);
-		glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_3D, densityTexture, 0, 256);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
 void display()
 {
 	
 	float near_plane = -5.0f, far_plane = 30;
 
 	//render 3D Texture
-	//render3DTexture(densityShader);
 	
 	computeShader3DTexture->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, densityTexture);
 	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 
-	glDispatchCompute(TextureWidth, TextureDepth, TextureHeigth);
+	glDispatchCompute(textureWidth, textureDepth, textureHeigth);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -296,13 +255,14 @@ void display()
 	marchingCubesShader->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, densityTexture);
-	marchingCubesShader->setFloat("lr", glm::clamp(cam.getEulerDegRotation().x / 180.0f, 0.0f, 1.0f));
 	marchingCubesShader->setMat4("projection", proj);
 	marchingCubesShader->setMat4("view", view);
 	model = glm::mat4(1.0f);
 	marchingCubesShader->setMat4("model", model);
-	glBindVertexArray(quadVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(VAO);
+	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth -1), textureHeigth);
+
+	//glDrawArrays(GL_POINTS, 0, 2);
 	glutSwapBuffers();
 }
 
@@ -391,7 +351,7 @@ void keyboard(unsigned char key, int x, int y)
 
 	if (key == 'w')
 	{
-		cam.addToLocalPosition(glm::vec3(0, 0, manualMovementStep));
+		cam.addToLocalPosition(glm::vec3(0, 0, manualMovementStep * 100));
 		glutPostRedisplay();
 	}
 

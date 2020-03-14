@@ -28,6 +28,9 @@ void main()
 	
 	//Shelfs
 	
+	//Noise
+
+	
 	//vec4 pixel = vec4((pos.x + pos.y + pos.z) /3.0,0,0,1);
 	
 	vec4 pixel = vec4(f,0,0,1);
