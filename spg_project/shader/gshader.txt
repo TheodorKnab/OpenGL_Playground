@@ -1,6 +1,6 @@
 #version 410 core
 layout (points) in;
-layout (triangle_strip, max_vertices = 5) out;
+layout (triangle_strip, max_vertices = 15) out;
 
 in VS_OUT {
     vec3 color;
@@ -10,6 +10,8 @@ out vec3 fColor;
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
+
+uniform sampler3D densityTexture;
 
 void build_house(vec4 position)
 {    

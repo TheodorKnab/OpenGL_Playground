@@ -1,10 +1,11 @@
 #version 410 core
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
 
-in vec3 fColor;
-
+uniform float lr;
+in vec2 texCoords;
+uniform sampler3D densityTexture;
 
 void main()
 {
-    FragColor = vec4(fColor, 1.0);   
+    FragColor = vec4(texture(densityTexture, vec3(texCoords.xy,lr).rgb, 1));
 }  

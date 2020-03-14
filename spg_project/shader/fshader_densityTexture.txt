@@ -8,5 +8,5 @@ uniform sampler3D densityTexture;
 
 void main()
 {
-    FragColor = vec4(TexCoords.xy, float(gl_Layer)/128.0,1);
+    FragColor = vec4(TexCoords.xy, gl_Layer,1);
 }  
