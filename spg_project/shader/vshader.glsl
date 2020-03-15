@@ -9,6 +9,8 @@ uniform mat4 view;
 uniform mat4 model;
 uniform vec3 densityTextureDimensions;
 
+vec3 wsVoxelSize = vec3(2.0/95.0);
+
 out vec2 texCoords;
 
 out VS_OUT {
@@ -26,9 +28,9 @@ void main()
 {
     //instanceID = gl_InstanceID;   
     vs_out.wsCoord = vec3(aPos.x, aPos.y, gl_InstanceID);
-    vs_out.uvw = vec3(vs_out.wsCoord.x / densityTextureDimensions.x, vs_out.wsCoord.y / densityTextureDimensions.y,  vs_out.wsCoord.z / densityTextureDimensions.z);
+    vs_out.uvw = vec3(aPos.x / densityTextureDimensions.x, aPos.y / densityTextureDimensions.y,  gl_InstanceID / densityTextureDimensions.z);
 
-    vec3 step = vec3(1.0/densityTextureDimensions.x, 1.0/densityTextureDimensions.y, 1.0 / densityTextureDimensions.z);
+    vec2 step = vec2(1.0 /densityTextureDimensions.x, 0);
     
     vs_out.f0123 = vec4( texture(densityTexture, vs_out.uvw + step.yyy).x,
     texture(densityTexture, vs_out.uvw + step.yyx).x,
@@ -42,7 +44,7 @@ void main()
     // determine which of the 256 marching cubes cases we have forthis cell:
     uvec4 n0123 = uvec4(clamp(vs_out.f0123*99999, 0.0, 1.0));
     uvec4 n4567 = uvec4(clamp(vs_out.f4567*99999, 0.0, 1.0));
-    vs_out.mc_case = (n0123.x) | (n0123.y << 1) | (n0123.z << 2) | (n0123.w << 3) | (n4567.x << 4) | (n4567.y << 5) | (n4567.z << 6) | (n4567.w << 7) ;
+    vs_out.mc_case = n0123.x + n0123.y * 2 +  n0123.z * 4 + n0123.w * 8 + n4567.x * 16 +  n4567.y * 32 + n4567.z * 64 + n4567.w * 128;
     gl_Position = projection * view * model * vec4(aPos.x, aPos.y, gl_InstanceID, 1.0); 
     // fill out return structusing these values, then on to the Geometry Shader.
     //texCoords = aTexCoords;

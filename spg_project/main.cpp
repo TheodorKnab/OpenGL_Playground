@@ -434,7 +434,7 @@ void init()
 	glEnable(GL_TEXTURE_3D);
 	glGenTextures(1, &densityTexture);
 	glBindTexture(GL_TEXTURE_3D, densityTexture);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -442,16 +442,18 @@ void init()
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeigth, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
 	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 	err = glGetError();
-	glBindTexture(GL_TEXTURE_3D, 0);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+	
+
 
 
 	
 	//Create Table Buffer
 	glGenBuffers(1, &mcTableBuffer);
 	glBindBuffer(GL_TEXTURE_BUFFER, mcTableBuffer);
-	glBufferData(GL_TEXTURE_BUFFER,		sizeof(triTable), triTable, GL_STATIC_DRAW);
+	glBufferData(GL_TEXTURE_BUFFER,	sizeof(triTable), triTable, GL_STATIC_DRAW);
 	//glBufferStorage(GL_TEXTURE_BUFFER, 4096 * sizeof(GLuint), &triTable, GL_MAP_READ_BIT);
 	//
 	//Create Table Texture
@@ -462,6 +464,9 @@ void init()
 
 	
 	err = glGetError();
+
+	glBindTexture(GL_TEXTURE_3D, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 
@@ -494,7 +499,7 @@ void display()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, densityTexture);
 	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
-
+	
 	glDispatchCompute(textureWidth, textureDepth, textureHeigth);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	
