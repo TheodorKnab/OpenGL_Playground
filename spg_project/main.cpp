@@ -97,7 +97,7 @@ Shader *densityShader, *computeShader3DTexture;
 GLuint densityTexture;
 unsigned int textureWidth = 96;
 unsigned int textureDepth = 96;
-unsigned int textureHeigth = 256;
+unsigned int textureHeight = 256;
 
 GLuint mcTableTexture;
 GLuint mcTableBuffer;
@@ -439,7 +439,7 @@ void init()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeigth, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeight, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
 	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 	err = glGetError();
 
@@ -500,7 +500,7 @@ void display()
 	glBindTexture(GL_TEXTURE_3D, densityTexture);
 	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 	
-	glDispatchCompute(textureWidth, textureDepth, textureHeigth);
+	glDispatchCompute(textureWidth, textureDepth, textureHeight);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	
 	
@@ -551,13 +551,13 @@ void display()
 	glBindTexture(GL_TEXTURE_BUFFER, mcTableTexture);
 	glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I	, mcTableBuffer);
 	marchingCubesShader->setInt("mcTableTexture", 0);
-	marchingCubesShader->setVec3("densityTextureDimensions", textureWidth, textureDepth, textureHeigth);
+	marchingCubesShader->setVec3("densityTextureDimensions", textureWidth, textureDepth, textureHeight);
 	marchingCubesShader->setMat4("projection", proj);
 	marchingCubesShader->setMat4("view", view);
 	model = glm::mat4(1.0f);
 	marchingCubesShader->setMat4("model", model);
 	glBindVertexArray(VAO);
-	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth -1), textureHeigth);
+	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth -1), textureHeight);
 
 	//glDrawArrays(GL_POINTS, 0, 2);
 	glutSwapBuffers();

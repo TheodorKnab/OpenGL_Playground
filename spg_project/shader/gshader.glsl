@@ -127,7 +127,7 @@ void placeVertOnEdge(uint edgeNum)
 void buildMarchingCube()
 {
     
-    //fColor = gs_in[0].f0123.xyz;
+    fColor = gs_in[0].f0123.xyz;
     int tablePos = int(gs_in[0].mc_case) * 16;
 
     // for(int i = 0; i < 3; ++i){

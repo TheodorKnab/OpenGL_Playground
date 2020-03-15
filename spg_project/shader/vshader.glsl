@@ -30,15 +30,15 @@ void main()
     vs_out.wsCoord = vec3(aPos.x, aPos.y, gl_InstanceID);
     vs_out.uvw = vec3(aPos.x / densityTextureDimensions.x, aPos.y / densityTextureDimensions.y,  gl_InstanceID / densityTextureDimensions.z);
 
-    vec2 step = vec2(1.0 /densityTextureDimensions.x, 0);
+    vec3 step = vec3(1.0 /densityTextureDimensions.x, 0, 1.0 /densityTextureDimensions.z);
     
     vs_out.f0123 = vec4( texture(densityTexture, vs_out.uvw + step.yyy).x,
-    texture(densityTexture, vs_out.uvw + step.yyx).x,
-    texture(densityTexture, vs_out.uvw + step.xyx).x,
+    texture(densityTexture, vs_out.uvw + step.yyz).x,
+    texture(densityTexture, vs_out.uvw + step.xyz).x,
     texture(densityTexture, vs_out.uvw + step.xyy).x );
     vs_out.f4567 = vec4( texture(densityTexture, vs_out.uvw + step.yxy).x,
-    texture(densityTexture, vs_out.uvw + step.yxx).x,
-    texture(densityTexture, vs_out.uvw + step.xxx).x,
+    texture(densityTexture, vs_out.uvw + step.yxz).x,
+    texture(densityTexture, vs_out.uvw + step.xxz).x,
     texture(densityTexture, vs_out.uvw + step.xxy).x );
 
     // determine which of the 256 marching cubes cases we have forthis cell:
