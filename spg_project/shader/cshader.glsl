@@ -12,12 +12,12 @@ void main()
 	
 	vec2[] pillars = vec2[](vec2(0.333,0.33), vec2(0.66, 0.33), vec2(0.5,0.66));
 	
-	float f = 0;
+	float density = 0;
 	
 	//Pillars
 	for(int i = 0;i < pillars.length(); ++i)
 	{
-		f += clamp(((0.15/ length(pos.xy - vec2(pillars[i].x + 0.1 * sin(10 * pos.z), pillars[i].y + 0.1 * cos(10 * pos.z)))) - 1) * 499999.0,0.0,1.0);		
+		density += clamp(((0.15/ length(pos.xy - vec2(pillars[i].x + 0.1 * sin(10 * pos.z), pillars[i].y + 0.1 * cos(10 * pos.z)))) - 1) * 499999.0,0.0,1.0);		
 	}
 	
 	//Negative Pillar
@@ -30,10 +30,10 @@ void main()
 	
 	//Noise
 
-	
+
 	//vec4 pixel = vec4((pos.x + pos.y + pos.z) /3.0,0,0,1);
 	
-	vec4 pixel = vec4(f,0,0,1);
+	vec4 pixel = vec4(density,0,0,1);
 
     imageStore (tex_output, pixel_coords, pixel);
 }

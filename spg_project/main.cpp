@@ -12,14 +12,14 @@ GLfloat cube_height_scale_y = 29;
 
 glm::vec3 cam_pos_b;
 glm::vec2 mouse_pos = glm::vec2(0, 0);
-
+glm::vec3 camMovementVector = glm::vec3(0,0,0);
 GLfloat mouse_sensitivity = 0.005f;
 GLfloat cameraMoveTime = 30;
 GLfloat cameraMoveTimer = 0;
 
 GLfloat x_rot = 0, y_rot = 0, z_rot = 0;
 GLfloat t_old = 0;
-GLfloat camSpeed = 200;
+GLfloat camSpeed = 10;
 
 
 CatmullRomCurve position_curve;
@@ -143,6 +143,7 @@ void init()
 	//model loading 
 	ourModel = new Model("models/cube.obj");
 	glEnable(GL_DEPTH_TEST);
+	
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
@@ -176,12 +177,20 @@ void init()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeigth, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
-	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8);
+	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 	err = glGetError();
 	glBindTexture(GL_TEXTURE_3D, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
+	computeShader3DTexture->use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, densityTexture);
+	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
+
+	glDispatchCompute(textureWidth, textureDepth, textureHeigth);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 }
 
@@ -210,13 +219,7 @@ void display()
 
 	//render 3D Texture
 	
-	computeShader3DTexture->use();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, densityTexture);
-	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
-
-	glDispatchCompute(textureWidth, textureDepth, textureHeigth);
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	
 	
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glClearColor(0.5f, 0.9f, 1.0f, 1.0f);
@@ -232,7 +235,13 @@ void display()
 		cameraMoveTimer += static_cast<float>(deltaTime) / 1000;
 	}
 
+	//smooth Camera Movement
 
+	if (camMovementVector != glm::vec3(0,0,0))
+	{
+		cam.addToLocalPosition(camSpeed * glm::normalize(camMovementVector) * (static_cast<float>(deltaTime) / 1000));
+	}
+	
 	//rotate the scene
 	if (in_progress)
 	{
@@ -255,6 +264,7 @@ void display()
 	marchingCubesShader->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, densityTexture);
+	marchingCubesShader->setVec3("densityTextureDimensions", textureWidth, textureDepth, textureHeigth);
 	marchingCubesShader->setMat4("projection", proj);
 	marchingCubesShader->setMat4("view", view);
 	model = glm::mat4(1.0f);
@@ -343,45 +353,10 @@ void keyboard(unsigned char key, int x, int y)
 	{
 		glEnable(GL_MULTISAMPLE);
 	}
-	if (key == 's')
-	{
-		cam.addToLocalPosition(glm::vec3(0, 0, -manualMovementStep));
-		glutPostRedisplay();
-	}
-
-	if (key == 'w')
-	{
-		cam.addToLocalPosition(glm::vec3(0, 0, manualMovementStep * 100));
-		glutPostRedisplay();
-	}
-
-	if (key == 'd')
-	{
-		cam.addToLocalPosition(glm::vec3(-manualMovementStep, 0, 0));
-		glutPostRedisplay();
-	}
-
-	if (key == 'a')
-	{
-		cam.addToLocalPosition(glm::vec3(manualMovementStep, 0, 0));
-		glutPostRedisplay();
-	}
-
+	
 	if (key == 't')
 	{
 		wireframeMode = !wireframeMode;
-	}
-
-	if (key == 'q')
-	{
-		cam.addToLocalPosition(glm::vec3(0, -manualMovementStep, 0));
-		glutPostRedisplay();
-	}
-
-	if (key == 'e')
-	{
-		cam.addToLocalPosition(glm::vec3(0, manualMovementStep, 0));
-		glutPostRedisplay();
 	}
 
 	if (key == 'l')
@@ -399,7 +374,37 @@ void keyboard(unsigned char key, int x, int y)
 		loadShaders();
 
 	}
+	
+	if (key == 's')
+	{
+		camMovementVector += glm::vec3(0, 0, -manualMovementStep);
+	}
 
+	if (key == 'w')
+	{
+		camMovementVector += glm::vec3(0, 0, manualMovementStep);
+	}
+
+	if (key == 'd')
+	{
+		camMovementVector += glm::vec3(-manualMovementStep, 0, 0);
+
+	}
+
+	if (key == 'a')
+	{
+		camMovementVector += glm::vec3(manualMovementStep, 0, 0);
+	}
+
+	if (key == 'q')
+	{
+		camMovementVector += glm::vec3(0, -manualMovementStep, 0);
+	}
+
+	if (key == 'e')
+	{
+		camMovementVector += glm::vec3(0, manualMovementStep, 0);
+	}
 	//add point
 	if (key == ' ')
 	{
@@ -425,6 +430,7 @@ void keyboard(unsigned char key, int x, int y)
 	//speed + 
 	if (key == '.')
 	{
+		camSpeed += 10;
 		float current_t = cameraMoveTimer / cameraMoveTime;
 		++cameraMoveTime;
 		cameraMoveTimer = cameraMoveTime * current_t;
@@ -434,10 +440,22 @@ void keyboard(unsigned char key, int x, int y)
 	//speed -
 	if (key == ',' && cameraMoveTime > 1)
 	{
+
+		camSpeed -= 10;
 		float current_t = cameraMoveTimer / cameraMoveTime;
 		--cameraMoveTime;
 		cameraMoveTimer = cameraMoveTime * current_t;
 		cout << "Tracktime: " << cameraMoveTime << endl;
+	}
+}
+
+
+
+void keyboard_up(unsigned char key, int x, int y)
+{
+	if (key == 's' || key == 'w' || key == 'a' || key == 'd' || key == 'q' || key == 'e')
+	{
+		camMovementVector = glm::vec3(0,0,0);
 	}
 }
 
@@ -503,7 +521,7 @@ int main(int argc, char* argv[])
 		glutIdleFunc(idle);
 
 		glutKeyboardFunc(keyboard);
-
+		glutKeyboardUpFunc(keyboard_up);
 		glutMouseFunc(mouse);
 
 		glutPassiveMotionFunc(mouse_move);
