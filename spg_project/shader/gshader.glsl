@@ -112,7 +112,7 @@ void placeVertOnEdge(uint edgeNum)
     vec3 point1 = vec3(edge_start[edgeNum * 6 + 3], edge_start[edgeNum * 6 + 4], edge_start[edgeNum * 6 + 5]);
     vec3 pos_within_cell = mix(point0, point1, 0.5); //[0..1]
 
-    vec3 vecWsCoord= gs_in[0].wsCoord.xyz + pos_within_cell.xyz;// * wsVoxelSize;
+    vec3 vecWsCoord= gs_in[0].wsCoord.xyz + pos_within_cell.zyx;// * wsVoxelSize;
     gl_Position = projection * view * model * vec4(vecWsCoord, 1);
     EmitVertex();
     //float3 uvw= input.uvw + ( pos_within_cell*inv_voxelDimMinusOne).xzy;
@@ -127,7 +127,7 @@ void placeVertOnEdge(uint edgeNum)
 void buildMarchingCube()
 {
     
-    fColor = gs_in[0].f0123.xyz;
+    //fColor = gs_in[0].f0123.xyz;
     int tablePos = int(gs_in[0].mc_case) * 16;
 
     // for(int i = 0; i < 3; ++i){
