@@ -8,11 +8,14 @@ void main()
     ivec3 dims = imageSize (tex_output);
     ivec3 pixel_coords = ivec3(gl_GlobalInvocationID.xyz);
 
-    //correct the generation depended on the current position of the camera
-    pixel_coords.z += texturePosition;
+    //pixel_coords.z += texturePosition * 256;
     
     //vec4 pixel = vec4(float(pixel_coords.x)/dims.x, pixel_coords.y/dims.y, pixel_coords.y/dims.y, 1.0);
     vec3 pos = vec3(float(pixel_coords.x)/dims.x,float(pixel_coords.y)/dims.y, float(pixel_coords.z)/dims.z);
+    
+    //correct the generation depended on the current position of the camera
+    //pos.z = pos.z + float(texturePosition);
+
     
     vec2[] pillars = vec2[](vec2(0.333,0.33), vec2(0.66, 0.33), vec2(0.5,0.66));
     
@@ -32,8 +35,8 @@ void main()
     density -= pow(length(pos.xy), 3);
 
     //Helix
-    vec2 vec = vec2(cos(pos.z * 3.0), sin(pos.z * 3.0));
-    density += dot(vec, pos.xy);
+    vec2 vec = vec2(cos(pos.z * 5.0), sin(pos.z * 5.0));
+    density +=  dot(vec, (pos.xy * 2) - 1);
     
     //Shelfs
     density += pow(cos(pos.z * 20.0),3);
@@ -46,7 +49,6 @@ void main()
     vec4 pixel = vec4(clamp(density * 499999.0, 0.0, 1.0), 0, 0, 1);
 
     
-    pixel_coords.z -= texturePosition;
 
     imageStore (tex_output, pixel_coords, pixel);
 }

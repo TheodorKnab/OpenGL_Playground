@@ -14,12 +14,12 @@ glm::vec3 cam_pos_b;
 glm::vec2 mouse_pos = glm::vec2(0, 0);
 glm::vec3 camMovementVector = glm::vec3(0,0,0);
 GLfloat mouse_sensitivity = 0.005f;
-GLfloat cameraMoveTime = 30;
+GLfloat cameraMoveTime = 50;
 GLfloat cameraMoveTimer = 0;
 
 GLfloat x_rot = 0, y_rot = 0, z_rot = 0;
 GLfloat t_old = 0;
-GLfloat camSpeed = 10;
+GLfloat camSpeed = 30;
 
 
 CatmullRomCurve position_curve;
@@ -110,7 +110,7 @@ int cameraSector = 0;
 int oldcameraSector = 0;
 int reloadTopSectorBound = 150;
 int reloadLowerSectorBound = -150;
-int cameraSectorHeight = 256;
+int cameraSectorHeight = 255;
 bool reload = false;
 
 const GLuint triTable[4096] =
@@ -382,6 +382,10 @@ void loadShaders() {
 //initialization of the application.
 void init()
 {
+	//add points for Camera path
+
+	cam.setRotation(glm::quat(-0.709228, 0.033732, 0.042226, 0.702905));
+	
 	GLenum err = glewInit();
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
@@ -410,8 +414,6 @@ void init()
 
 
 
-	//model loading 
-	ourModel = new Model("models/cube.obj");
 	glEnable(GL_DEPTH_TEST);
 	
 	glGenBuffers(1, &VBO);
@@ -509,7 +511,7 @@ void display()
 	
 	float near_plane = 0.1f, far_plane = 300;
 
-	//camera position dependend texture changes
+	//camera position depended texture changes
 	if (-cam.getPosition().z < (cameraSector * cameraSectorHeight) + reloadLowerSectorBound)
 	{
 		cameraSector--;
@@ -525,9 +527,17 @@ void display()
 		reload = false;
 		oldcameraSector = cameraSector;
 		computeShader3DTexture->use();
+
+		printf("Camera Height %f \n", -cam.getPosition().z);
+
+		printf("Camera Sector %i \n", cameraSector);
+		
+		
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D, densityTextureA);
+
+
 		computeShader3DTexture->setInt("texturePosition", cameraSector);
+		glBindTexture(GL_TEXTURE_3D, densityTextureA);
 		glBindImageTexture(0, densityTextureA, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 
 		glDispatchCompute(textureWidth, textureDepth, textureHeight);
@@ -537,6 +547,7 @@ void display()
 		computeShader3DTexture->setInt("texturePosition", cameraSector - 1);
 		glBindTexture(GL_TEXTURE_3D, densityTextureB);
 		glBindImageTexture(0, densityTextureB, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
+		
 		glDispatchCompute(textureWidth, textureDepth, textureHeight);
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
@@ -595,12 +606,12 @@ void display()
 	model = glm::mat4(1.0f);
 	marchingCubesShader->setMat4("model", model);
 	glBindVertexArray(VAO);
-	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth -1), textureHeight);
+	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth -1), textureHeight-1);
 
 
 	marchingCubesShader->setInt("cameraSector", cameraSector - 1);
 	glBindTexture(GL_TEXTURE_3D, densityTextureB);
-	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth - 1), textureHeight);
+	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth - 1), textureHeight-1);
 	//glDrawArrays(GL_POINTS, 0, 2);
 	glutSwapBuffers();
 }
