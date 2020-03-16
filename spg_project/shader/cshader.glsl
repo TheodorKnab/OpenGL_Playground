@@ -1,12 +1,16 @@
 #version 430
 layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 layout (r8, binding = 0) uniform image3D tex_output;
+uniform int texturePosition;
 
 void main()
 {
     ivec3 dims = imageSize (tex_output);
     ivec3 pixel_coords = ivec3(gl_GlobalInvocationID.xyz);
 
+    //correct the generation depended on the current position of the camera
+    pixel_coords.z += texturePosition;
+    
     //vec4 pixel = vec4(float(pixel_coords.x)/dims.x, pixel_coords.y/dims.y, pixel_coords.y/dims.y, 1.0);
     vec3 pos = vec3(float(pixel_coords.x)/dims.x,float(pixel_coords.y)/dims.y, float(pixel_coords.z)/dims.z);
     
@@ -26,17 +30,23 @@ void main()
     
     //Outside
     density -= pow(length(pos.xy), 3);
-    
+
     //Helix
     vec2 vec = vec2(cos(pos.z * 3.0), sin(pos.z * 3.0));
     density += dot(vec, pos.xy);
     
     //Shelfs
-    density += cos(pos.z * 20.0);
+    density += pow(cos(pos.z * 20.0),3);
     
     //Noise
-    
+
+
+
+    //clamp
     vec4 pixel = vec4(clamp(density * 499999.0, 0.0, 1.0), 0, 0, 1);
+
+    
+    pixel_coords.z -= texturePosition;
 
     imageStore (tex_output, pixel_coords, pixel);
 }

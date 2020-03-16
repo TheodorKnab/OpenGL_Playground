@@ -94,7 +94,7 @@ std::vector<unsigned int> depthMap;
 Shader* simpleDepthShader;
 
 Shader *densityShader, *computeShader3DTexture;
-GLuint densityTexture;
+GLuint densityTextureA, densityTextureB;
 unsigned int textureWidth = 96;
 unsigned int textureDepth = 96;
 unsigned int textureHeight = 256;
@@ -106,6 +106,12 @@ unsigned int quadVAO, quadVBO;
 GLenum* DrawBuffers = new GLenum[2];
 bool wireframeMode = false;
 
+int cameraSector = 0;
+int oldcameraSector = 0;
+int reloadTopSectorBound = 150;
+int reloadLowerSectorBound = -150;
+int cameraSectorHeight = 256;
+bool reload = false;
 
 const GLuint triTable[4096] =
 {
@@ -367,6 +373,7 @@ const GLuint triTable[4096] =
 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
 void loadShaders() {
+	reload = true;
 	//Basic Default Shadow Mapping
 	marchingCubesShader = new Shader("shader/vshader.glsl", "shader/fshader.glsl", "shader/gshader.glsl");
 	computeShader3DTexture = new Shader("shader/cshader.glsl");
@@ -432,19 +439,29 @@ void init()
 
 	loadShaders();
 	glEnable(GL_TEXTURE_3D);
-	glGenTextures(1, &densityTexture);
-	glBindTexture(GL_TEXTURE_3D, densityTexture);
+	glGenTextures(1, &densityTextureA);
+	glBindTexture(GL_TEXTURE_3D, densityTextureA);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeight, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
-	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
+	glBindImageTexture(0, densityTextureA, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 	err = glGetError();
 
 
-
+	glEnable(GL_TEXTURE_3D);
+	glGenTextures(1, &densityTextureB);
+	glBindTexture(GL_TEXTURE_3D, densityTextureB);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeight, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
+		glBindImageTexture(0, densityTextureB, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
+	err = glGetError();
 	
 
 
@@ -492,16 +509,37 @@ void display()
 	
 	float near_plane = 0.1f, far_plane = 300;
 
-	//render 3D Texture
-
-
-	computeShader3DTexture->use();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, densityTexture);
-	glBindImageTexture(0, densityTexture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
+	//camera position dependend texture changes
+	if (-cam.getPosition().z < (cameraSector * cameraSectorHeight) + reloadLowerSectorBound)
+	{
+		cameraSector--;
+	}
+	if (-cam.getPosition().z > (cameraSector * cameraSectorHeight) + reloadTopSectorBound)
+	{
+		cameraSector++;
+	}
 	
-	glDispatchCompute(textureWidth, textureDepth, textureHeight);
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	//render 3D Texture
+	if (reload || oldcameraSector != cameraSector)
+	{
+		reload = false;
+		oldcameraSector = cameraSector;
+		computeShader3DTexture->use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_3D, densityTextureA);
+		computeShader3DTexture->setInt("texturePosition", cameraSector);
+		glBindImageTexture(0, densityTextureA, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
+
+		glDispatchCompute(textureWidth, textureDepth, textureHeight);
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+
+		computeShader3DTexture->setInt("texturePosition", cameraSector - 1);
+		glBindTexture(GL_TEXTURE_3D, densityTextureB);
+		glBindImageTexture(0, densityTextureB, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
+		glDispatchCompute(textureWidth, textureDepth, textureHeight);
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	}
 	
 	
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -546,12 +584,12 @@ void display()
 	}
 	marchingCubesShader->use();
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, densityTexture);
+	glBindTexture(GL_TEXTURE_3D, densityTextureA);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_BUFFER, mcTableTexture);
 	glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I	, mcTableBuffer);
-	marchingCubesShader->setInt("mcTableTexture", 0);
 	marchingCubesShader->setVec3("densityTextureDimensions", textureWidth, textureDepth, textureHeight);
+	marchingCubesShader->setInt("cameraSector", cameraSector);
 	marchingCubesShader->setMat4("projection", proj);
 	marchingCubesShader->setMat4("view", view);
 	model = glm::mat4(1.0f);
@@ -559,6 +597,10 @@ void display()
 	glBindVertexArray(VAO);
 	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth -1), textureHeight);
 
+
+	marchingCubesShader->setInt("cameraSector", cameraSector - 1);
+	glBindTexture(GL_TEXTURE_3D, densityTextureB);
+	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth - 1), textureHeight);
 	//glDrawArrays(GL_POINTS, 0, 2);
 	glutSwapBuffers();
 }
@@ -658,7 +700,7 @@ void keyboard(unsigned char key, int x, int y)
 
 	if (key == 'r')
 	{
-		loadShaders();
+		loadShaders();		
 
 	}
 	

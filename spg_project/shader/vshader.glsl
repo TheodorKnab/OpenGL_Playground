@@ -18,19 +18,20 @@ out VS_OUT {
     vec3 uvw;
     vec4 f0123;
     vec4 f4567;
-    uint mc_case;
+    uint mc_case;  
 } vs_out;
 
 uniform sampler3D densityTexture;
-
+uniform int cameraSector;
 
 void main()
 {
     //instanceID = gl_InstanceID;   
-    vs_out.wsCoord = vec3(aPos.x, aPos.y, gl_InstanceID);
-    vs_out.uvw = vec3(aPos.x / densityTextureDimensions.x, aPos.y / densityTextureDimensions.y,  gl_InstanceID / densityTextureDimensions.z);
+    vs_out.wsCoord = vec3(aPos.x, aPos.y, cameraSector * densityTextureDimensions.z + gl_InstanceID);
+    vs_out.uvw = vec3(aPos.x / densityTextureDimensions.x, aPos.y / densityTextureDimensions.y,  gl_InstanceID / (densityTextureDimensions.z));
 
-    vec3 step = vec3(1.0 /densityTextureDimensions.x, 0, 1.0 /densityTextureDimensions.z);
+
+    vec3 step = vec3(1.0 / densityTextureDimensions.x, 0, 1.0 / densityTextureDimensions.z);
     
     vs_out.f0123 = vec4( texture(densityTexture, vs_out.uvw + step.yyy).x,
     texture(densityTexture, vs_out.uvw + step.yyz).x,
