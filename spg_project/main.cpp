@@ -661,7 +661,7 @@ void saveSamplesToFile(int Samples)
 
 void keyboard(unsigned char key, int x, int y)
 {
-	if (key == '1')
+	/*if (key == '1')
 	{
 		saveSamplesToFile(2);
 		continueApplication = true;
@@ -693,21 +693,21 @@ void keyboard(unsigned char key, int x, int y)
 	{
 		glEnable(GL_MULTISAMPLE);
 	}
-	
+	*/
 	if (key == 't')
 	{
 		wireframeMode = !wireframeMode;
 	}
 
-	if (key == 'l')
-	{
-		camlock = true;
-	}
+	//if (key == 'l')
+	//{
+	//	camlock = true;
+	//}
 
-	if (key == 'u')
-	{
-		camlock = false;
-	}
+	//if (key == 'u')
+	//{
+	//	camlock = false;
+	//}
 
 	if (key == 'r')
 	{

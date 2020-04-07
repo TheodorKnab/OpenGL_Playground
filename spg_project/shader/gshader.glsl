@@ -184,7 +184,6 @@ void buildMarchingCube()
 
     while(texelFetch(mcTableTexture, int(tablePos)).x != -1){
         
-        EndPrimitive(); 
         placeVertOnEdge(texelFetch(mcTableTexture, int(tablePos)).x);
         tablePos++;
         placeVertOnEdge(texelFetch(mcTableTexture, int(tablePos)).x);
