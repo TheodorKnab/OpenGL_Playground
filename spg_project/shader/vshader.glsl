@@ -46,7 +46,9 @@ void main()
     uvec4 n0123 = uvec4(clamp(vs_out.f0123*99999, 0.0, 1.0));
     uvec4 n4567 = uvec4(clamp(vs_out.f4567*99999, 0.0, 1.0));
     vs_out.mc_case = n0123.x + n0123.y * 2 +  n0123.z * 4 + n0123.w * 8 + n4567.x * 16 +  n4567.y * 32 + n4567.z * 64 + n4567.w * 128;
-    gl_Position = projection * view * model * vec4(aPos.x, aPos.y, gl_InstanceID, 1.0); 
+    //vs_out.mc_case = 1;
+    //gl_Position = projection * view * model * vec4(aPos.x, aPos.y, gl_InstanceID, 1.0); 
+    gl_Position = projection * view * model * vec4(vs_out.wsCoord, 1.0);
     // fill out return structusing these values, then on to the Geometry Shader.
     //texCoords = aTexCoords;
 }

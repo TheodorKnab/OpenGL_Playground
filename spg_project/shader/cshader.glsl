@@ -46,7 +46,7 @@ void main()
 
 
     //clamp
-    vec4 pixel = vec4(clamp(density * 499999.0, 0.0, 1.0), 0, 0, 1);
+    vec4 pixel = vec4(density, 0, 0, 1);
 
     
 

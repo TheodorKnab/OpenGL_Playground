@@ -21,6 +21,7 @@
 #include "assimp/config.h"
 #include "Model.h"
 #include "Mesh.h"
+#include "LUT.h"
 
 void geometry();
 

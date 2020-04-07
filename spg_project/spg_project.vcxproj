@@ -141,6 +141,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="CatmullRomCurve.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="LUT.h" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="squadCurve.cpp" />
