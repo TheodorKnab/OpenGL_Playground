@@ -8,7 +8,6 @@
 #include <math.h>
 #include <glm/glm.hpp>
 
-using namespace std;
 
 
 class CatmullRomCurve
@@ -40,7 +39,7 @@ private:
 
 	// List of control points / waypoints
 	// example: myLinearCurve.mControlPoints.push_back(ControlPoint(10.0, 10.0, 0.0, 1.0));
-	vector<glm::vec3> mControlPoints;
+	std::vector<glm::vec3> mControlPoints;
 };
 
 

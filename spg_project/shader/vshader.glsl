@@ -24,11 +24,12 @@ out VS_OUT {
 uniform sampler3D densityTexture;
 uniform int cameraSector;
 
+
 void main()
 {
     //instanceID = gl_InstanceID;   
-    vs_out.wsCoord = vec3(aPos.x, aPos.y, cameraSector * (densityTextureDimensions.z-1) + gl_InstanceID);
-    vs_out.uvw = vec3(aPos.x / densityTextureDimensions.x, aPos.y / densityTextureDimensions.y ,  gl_InstanceID / (densityTextureDimensions.z - 1));
+    vs_out.wsCoord = vec3(aPos.x, aPos.y, cameraSector * (densityTextureDimensions.z) + gl_InstanceID);
+    vs_out.uvw = vec3(aPos.x / densityTextureDimensions.x, aPos.y / densityTextureDimensions.y ,  gl_InstanceID / (densityTextureDimensions.z));
 
 
     vec3 step = vec3(1.0 / densityTextureDimensions.x, 0, 1.0 / densityTextureDimensions.z);
@@ -42,6 +43,8 @@ void main()
     texture(densityTexture, vs_out.uvw + step.xxz).x,
     texture(densityTexture, vs_out.uvw + step.xxy).x );
 
+    
+
     // determine which of the 256 marching cubes cases we have forthis cell:
     uvec4 n0123 = uvec4(clamp(vs_out.f0123*99999, 0.0, 1.0));
     uvec4 n4567 = uvec4(clamp(vs_out.f4567*99999, 0.0, 1.0));
@@ -49,6 +52,9 @@ void main()
     //vs_out.mc_case = 1;
     //gl_Position = projection * view * model * vec4(aPos.x, aPos.y, gl_InstanceID, 1.0); 
     gl_Position = projection * view * model * vec4(vs_out.wsCoord, 1.0);
+
+
+    
     // fill out return structusing these values, then on to the Geometry Shader.
     //texCoords = aTexCoords;
 }

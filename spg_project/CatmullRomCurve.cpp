@@ -14,7 +14,7 @@ glm::vec3 CatmullRomCurve::evaluate(float t)
 {
 	if (mControlPoints.size() == 0)
 	{
-		cout << "CatmullRomCurve: No Points!!!" << endl;
+		std::cout << "CatmullRomCurve: No Points!!!" << std::endl;
 		return glm::vec3(0, 0, 0);
 	}
 	// handle boundary conditions
@@ -127,7 +127,7 @@ void CatmullRomCurve::addPoint(glm::vec3 vec)
 {
 	//The third section of the CatmullRom Formula, using points
 
-	cout << "Position POINTADD x: " << vec.x << " y: " << vec.y << " z: " << vec.z << endl;
+	std::cout << "Position POINTADD x: " << vec.x << " y: " << vec.y << " z: " << vec.z << std::endl;
 
 	mControlPoints.push_back(vec);
 }

@@ -8,7 +8,6 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-using namespace std;
 
 
 class squadCurve
@@ -25,5 +24,5 @@ public:
 	void addPoint(glm::quat rot);
 	void clear();
 private:
-	vector<glm::quat> mControlPoints;
+	std::vector<glm::quat> mControlPoints;
 };

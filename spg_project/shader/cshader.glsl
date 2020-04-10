@@ -43,9 +43,9 @@ void main()
     
     //Noise
 
+    
 
-
-    //clamp
+    //DONT clamp
     vec4 pixel = vec4(density, 0, 0, 1);
 
     

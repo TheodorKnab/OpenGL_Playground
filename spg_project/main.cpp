@@ -162,14 +162,14 @@ void init()
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(float), &points[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(float), points.data(), GL_STATIC_DRAW);
 	
 	// position attribute
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
 
-
+	
 	glGenBuffers(1, &quadVBO);
 	glGenVertexArrays(1, &quadVAO);
 	glBindVertexArray(quadVAO);
@@ -177,24 +177,25 @@ void init()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
 	
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
 
 	loadShaders();
+	
 	glEnable(GL_TEXTURE_3D);
 	glGenTextures(1, &densityTextureA);
 	glBindTexture(GL_TEXTURE_3D, densityTextureA);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeight, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeight, 0, GL_RED, GL_UNSIGNED_SHORT, nullptr);
 	glBindImageTexture(0, densityTextureA, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 	err = glGetError();
 
-
+		
 	glEnable(GL_TEXTURE_3D);
 	glGenTextures(1, &densityTextureB);
 	glBindTexture(GL_TEXTURE_3D, densityTextureB);
@@ -203,8 +204,8 @@ void init()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeight, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
-		glBindImageTexture(0, densityTextureB, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeight, 0, GL_RED, GL_UNSIGNED_SHORT, nullptr);
+	glBindImageTexture(0, densityTextureB, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 	err = glGetError();
 	
 
@@ -225,7 +226,8 @@ void init()
 
 	
 	err = glGetError();
-
+	//GLint test;
+	//glGetIntegerv(GL_MAX_GEOMETRY_TEXTURE_IMAGE_UNITS_ARB, &test);
 	glBindTexture(GL_TEXTURE_3D, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -240,9 +242,8 @@ void reshape(int w, int h)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	//gluPerspective(60, (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1, 50);
-	proj = glm::perspective(glm::radians(60.0f), static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),
-	                        0.1f, 300.f);
-
+	proj = glm::perspective(glm::radians(60.0f), static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),0.1f, 300.f);
+	
 	glMatrixMode(GL_MODELVIEW);
 }
 
@@ -403,54 +404,11 @@ void saveSamplesToFile(int Samples)
 
 void keyboard(unsigned char key, int x, int y)
 {
-	/*if (key == '1')
-	{
-		saveSamplesToFile(2);
-		continueApplication = true;
-		glutLeaveMainLoop();
-	}
-	if (key == '2')
-	{
-		saveSamplesToFile(4);
-		continueApplication = true;
-		glutLeaveMainLoop();
-	}
-	if (key == '3')
-	{
-		saveSamplesToFile(8);
-		continueApplication = true;
-		glutLeaveMainLoop();
-	}
-	if (key == '4')
-	{
-		saveSamplesToFile(16);
-		continueApplication = true;
-		glutLeaveMainLoop();
-	}
-	if (key == '0')
-	{
-		glDisable(GL_MULTISAMPLE);
-	}
-	if (key == '9')
-	{
-		glEnable(GL_MULTISAMPLE);
-	}
-	*/
 	if (key == 't')
 	{
 		wireframeMode = !wireframeMode;
 	}
-
-	//if (key == 'l')
-	//{
-	//	camlock = true;
-	//}
-
-	//if (key == 'u')
-	//{
-	//	camlock = false;
-	//}
-
+	
 	if (key == 'r')
 	{
 		loadShaders();		
@@ -487,6 +445,7 @@ void keyboard(unsigned char key, int x, int y)
 	{
 		camMovementVector += glm::vec3(0, manualMovementStep, 0);
 	}
+	
 	//add point
 	if (key == ' ')
 	{
@@ -504,7 +463,7 @@ void keyboard(unsigned char key, int x, int y)
 	//clear
 	if (key == 'c')
 	{
-		cout << "cleared Points" << endl;
+		std::cout << "cleared Points" << std::endl;
 		rot_curve.clear();
 		position_curve.clear();
 	}
@@ -516,7 +475,7 @@ void keyboard(unsigned char key, int x, int y)
 		float current_t = cameraMoveTimer / cameraMoveTime;
 		++cameraMoveTime;
 		cameraMoveTimer = cameraMoveTime * current_t;
-		cout << "Tracktime: " << cameraMoveTime << endl;
+		std::cout << "Tracktime: " << cameraMoveTime << std::endl;
 	}
 
 	//speed -
@@ -527,11 +486,9 @@ void keyboard(unsigned char key, int x, int y)
 		float current_t = cameraMoveTimer / cameraMoveTime;
 		--cameraMoveTime;
 		cameraMoveTimer = cameraMoveTime * current_t;
-		cout << "Tracktime: " << cameraMoveTime << endl;
+		std::cout << "Tracktime: " << cameraMoveTime << std::endl;
 	}
 }
-
-
 
 void keyboard_up(unsigned char key, int x, int y)
 {
@@ -554,7 +511,6 @@ void mouse_move(int x, int y)
 	mouse_pos.x = x;
 	mouse_pos.y = y;
 
-	//printf("current Texture Z = %i\n", glm::clamp(static_cast<int>(cam.getEulerDegRotation().x), 0, 256));
 }
 
 int main(int argc, char* argv[])
@@ -566,6 +522,7 @@ int main(int argc, char* argv[])
 		glutInit(&argc, argv);
 
 		glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+		
 		// Set the window size
 		glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 

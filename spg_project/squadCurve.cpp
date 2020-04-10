@@ -13,7 +13,7 @@ glm::quat squadCurve::evaluate(float t)
 {
 	if (mControlPoints.size() == 0)
 	{
-		cout << "Squad: No Points!!!" << endl;
+		std::cout << "Squad: No Points!!!" << std::endl;
 		return glm::quat();
 	}
 
@@ -85,7 +85,7 @@ glm::vec3 squadCurve::evaluateEuler(float t)
 
 void squadCurve::addPoint(glm::quat rot)
 {
-	cout << "Rotation POINTADD x: " << rot.x << " y: " << rot.y << " z: " << rot.z << " w: " << rot.w << endl;
+	std::cout << "Rotation POINTADD x: " << rot.x << " y: " << rot.y << " z: " << rot.z << " w: " << rot.w << std::endl;
 	mControlPoints.push_back(rot);
 }
 
