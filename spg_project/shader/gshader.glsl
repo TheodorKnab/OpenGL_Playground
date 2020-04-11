@@ -33,8 +33,8 @@ vec4 inv_voxelDim = vec4( 1.0/voxelDim, 0);
 vec4 inv_voxelDimMinusOne = vec4( 1.0/voxelDimMinusOne, 0 );
 
 
-layout(binding=0) uniform sampler3D densityTexture;
-layout(binding=1) uniform isamplerBuffer mcTableTexture;
+layout(binding = 0) uniform sampler3D densityTexture;
+layout(binding = 1) uniform isamplerBuffer mcTableTexture;
 uniform vec3 densityTextureDimensions;
 
 int edge_start[72] = {
@@ -145,9 +145,6 @@ vec4 cornerBmask4567[12] = {
 vec3 ComputeNormal(sampler3D tex, vec3 uvw)
 {    
     vec3 step = vec3(1.0 / densityTextureDimensions.x, 0, 1.0 / densityTextureDimensions.z);
-
-    //vec3 gradient = vec3(clamp(texture(densityTexture, vec3(0.3,0.3,0.3)).x * 99999,0.0,1.0), 1, 1);
-    //vec3 gradient = vec3(clamp(texelFetch(densityTexture, ivec3(1,1,1), 0).x * 99999,0.0,1.0), 1, 1);  
     
     vec3 gradient = vec3(   
                             texture(tex, uvw + step.xyy).x - 
@@ -159,8 +156,6 @@ vec3 ComputeNormal(sampler3D tex, vec3 uvw)
                         );
 
     return normalize(-gradient);
-
-    //return gradient;
 }
 
 vec3 calculateNormal(vec3 p1, vec3 p2, vec3 p3)

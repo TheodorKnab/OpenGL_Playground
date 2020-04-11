@@ -16,12 +16,11 @@
 #define GLM_SWIZZLE
 #include <glm/glm.hpp>
 #include "Shader.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
 #include "assimp/config.h"
 #include "Model.h"
 #include "Mesh.h"
 #include "LUT.h"
+//#include "imageLoader.h"
 
 void geometry();
 

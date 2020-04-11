@@ -59,7 +59,7 @@ glm::mat4 trans = glm::mat4(1.0f);
 
 Shader* marchingCubesShader;
 unsigned int VAO, VBO, EBO;
-unsigned int diffuseMap, specMap, normalMap;
+unsigned int diffuseX, diffuseY, diffuseZ;
 
 unsigned int FBO;
 unsigned int FBOtexture;
@@ -187,6 +187,7 @@ void init()
 	glGenTextures(1, &densityTextureA);
 	glBindTexture(GL_TEXTURE_3D, densityTextureA);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -207,9 +208,6 @@ void init()
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16F, textureWidth, textureDepth, textureHeight, 0, GL_RED, GL_UNSIGNED_SHORT, nullptr);
 	glBindImageTexture(0, densityTextureB, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 	err = glGetError();
-	
-
-
 
 	
 	//Create Table Buffer
@@ -224,11 +222,42 @@ void init()
 	glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, mcTableBuffer);
 
 
+	//____________________TEXTURES__________________
+
+	int width, height, nrChannels;
+
+	unsigned char* data = imageLoader::loadImageData("textures/stone_wall_X_2K_Albedo.jpg", &width, &height, &nrChannels, 0);
+	if (!data)
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	glGenTextures(1, &diffuseX);
+	imageLoader::setDefault2DTextureFromData(diffuseX, width, height, data);
+	imageLoader::freeImage((data));	
+
+
 	
-	err = glGetError();
-	//GLint test;
-	//glGetIntegerv(GL_MAX_GEOMETRY_TEXTURE_IMAGE_UNITS_ARB, &test);
-	glBindTexture(GL_TEXTURE_3D, 0);
+	data = imageLoader::loadImageData("textures/stone_wall_X_2K_Albedo.jpg", &width, &height, &nrChannels, 0);
+	if (!data)
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	glGenTextures(1, &diffuseY);
+	imageLoader::setDefault2DTextureFromData(diffuseY, width, height, data);
+	imageLoader::freeImage((data));
+
+	
+	
+	data = imageLoader::loadImageData("textures/moss_rock_Z_2K_Albedo.jpg", &width, &height, &nrChannels, 0);
+	if (!data)
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	glGenTextures(1, &diffuseZ);
+	imageLoader::setDefault2DTextureFromData(diffuseZ, width, height, data);
+	imageLoader::freeImage((data));
+	
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -339,9 +368,20 @@ void display()
 	marchingCubesShader->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, densityTextureA);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, diffuseX);
+	
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, diffuseY);
+
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, diffuseZ);
+
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_BUFFER, mcTableTexture);
 	glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I	, mcTableBuffer);
+	
 	marchingCubesShader->setVec3("densityTextureDimensions", textureWidth, textureDepth, textureHeight);
 	marchingCubesShader->setInt("cameraSector", cameraSector);
 	marchingCubesShader->setMat4("projection", proj);

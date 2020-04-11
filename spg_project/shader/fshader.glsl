@@ -1,7 +1,7 @@
-#version 410 core
+#version 440 core
 layout (location = 0) out vec4 FragColor;
 
-#define TEXTURE_SCALE 0.2
+#define TEXTURE_SCALE 0.02
 
 // in GS_Out{
 // // Stream out to a VB & save for reuse!
@@ -17,15 +17,21 @@ in GS_Out{
     vec3 fColor;
 } gs_in;
 
-uniform sampler3D densityTexture;
+layout(binding = 0) uniform sampler3D densityTexture;
+layout(binding = 2) uniform sampler2D diffuseX;
+layout(binding = 3) uniform sampler2D diffuseY;
+layout(binding = 4) uniform sampler2D diffuseZ;
+layout(binding = 5) uniform sampler2D displacementX;
+layout(binding = 6) uniform sampler2D displacementY;
+layout(binding = 7) uniform sampler2D displacementZ;
 
-uniform sampler2D diffuseX;
-uniform sampler2D diffuseY;
-uniform sampler2D diffuseZ;
-uniform sampler2D displacementX;
-uniform sampler2D displacementY;
-uniform sampler2D displacementZ;
-
+// uniform sampler3D densityTexture;
+// uniform sampler2D diffuseX;
+// uniform sampler2D diffuseY;
+// uniform sampler2D diffuseZ;
+// uniform sampler2D displacementX;
+// uniform sampler2D displacementY;
+// uniform sampler2D displacementZ;
 
 void main()
 {
@@ -43,13 +49,13 @@ void main()
     vec2 zCoord = gs_in.wsCoord.xy * TEXTURE_SCALE;
 
     // //blend colors from textures
-    // float4 xAxisColor = lichen1.Sample(LinearRepeatAnsio, xAxisCoord);
-    // float4 yAxisColor = lichen2.Sample(LinearRepeatAnsio, yAxisCoord);
-    // float4 zAxisColor = lichen3.Sample(LinearRepeatAnsio, zAxisCoord);
+    vec4 xColor = texture(diffuseX, xCoord);
+    vec4 yColor = texture(diffuseY, yCoord);
+    vec4 zColor = texture(diffuseZ, zCoord);
 
-    // float4 blendedColor = xAxisColor * blend_weights.xxxx +
-    //                       yAxisColor * blend_weights.yyyy +
-    //                       zAxisColor * blend_weights.zzzz;
+    vec4 blendedColor = xColor * blendWeights.xxxx +
+                          yColor * blendWeights.yyyy +
+                          zColor * blendWeights.zzzz;
 
-    FragColor = vec4(gs_in.wsNormal, 1.0);
+    FragColor = vec4(blendedColor);
 }  

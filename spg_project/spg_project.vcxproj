@@ -140,6 +140,7 @@
   <ItemGroup>
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="CatmullRomCurve.cpp" />
+    <ClCompile Include="imageLoader.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="LUT.h" />
     <ClCompile Include="main.cpp" />
@@ -150,6 +151,7 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="CatmullRomCurve.h" />
+    <ClInclude Include="imageLoader.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Mesh.h" />
