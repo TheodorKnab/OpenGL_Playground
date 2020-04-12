@@ -1,3 +1,5 @@
 # spg_proj
-Shader Programming Project
-textures not included!
+Shader Programming Project 
+
+Textures not included! 
+They are defined in the main, starting line 226
