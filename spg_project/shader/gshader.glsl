@@ -90,8 +90,7 @@ vec4 cornerAmask0123[12] = {
     vec4(1, 0, 0, 0),
     vec4(0, 1, 0, 0),
     vec4(0, 0, 1, 0),
-    vec4(0, 0, 0, 1),
-    
+    vec4(0, 0, 0, 1),    
 }; 
 
 vec4 cornerAmask4567[12] = {
@@ -173,8 +172,17 @@ vec3 calculateNormal(vec3 p1, vec3 p2, vec3 p3)
     return normal;
 }
 
-void placeVertOnEdge(uint edgeNum)
+void setupVertex(vec3 pos_within_cell, vec3 normal)
 {
+    vec3 vecWsCoord= gs_in[0].wsCoord.xyz + pos_within_cell.xyz;// * wsVoxelSize;
+    gl_Position = projection * view * model * vec4(vecWsCoord, 1);
+    vec3 uvw = gs_in[0].uvw + (pos_within_cell * inv_voxelDimMinusOne.xyz).xyz;
+    gs_out.wsCoord = vecWsCoord;   
+    gs_out.wsNormal = ComputeNormal(densityTexture, uvw);    
+    
+}
+
+vec3 getVertPositionOnEdge(uint edgeNum){
     // Along this cell edge, where does the density value hit zero?
     float str0= dot(cornerAmask0123[edgeNum], gs_in[0].f0123) + dot(cornerAmask4567[edgeNum], gs_in[0].f4567);
     float str1= dot(cornerBmask0123[edgeNum], gs_in[0].f0123) + dot(cornerBmask4567[edgeNum], gs_in[0].f4567);
@@ -190,20 +198,7 @@ void placeVertOnEdge(uint edgeNum)
     //fColor = gs_out.wsNormal;
     //t = 0;
     vec3 pos_within_cell = mix(point0, point1, t); //[0..1]
-
-    vec3 vecWsCoord= gs_in[0].wsCoord.xyz + pos_within_cell.xyz;// * wsVoxelSize;
-    gl_Position = projection * view * model * vec4(vecWsCoord, 1);
-    vec3 uvw = gs_in[0].uvw + (pos_within_cell * inv_voxelDimMinusOne.xyz).xyz;
-    gs_out.wsCoord = vecWsCoord;
-    gs_out.wsNormal = ComputeNormal(densityTexture, uvw);    
-    
-    EmitVertex();
-
-    //GSOutputoutput;
-    //output.wsCoord_Ambo.xyz= wsCoord;
-    //output.wsCoord_Ambo.w= grad_ambo_tex.SampleLevel(s, uvw, 0).w;
-    //output.wsNormal = ComputeNormal(tex, s, uvw);
-    //return output;
+    return pos_within_cell;
 }
 
 void buildMarchingCube()
@@ -213,12 +208,27 @@ void buildMarchingCube()
     gs_out.fColor = vec3(0.8,0.3,0);
     while(texelFetch(mcTableTexture, int(tablePos)).x != -1){
         
-        placeVertOnEdge(texelFetch(mcTableTexture, int(tablePos)).x);
+       
+        vec3 p1 =  getVertPositionOnEdge(texelFetch(mcTableTexture, int(tablePos)).x);        
         tablePos++;
-        placeVertOnEdge(texelFetch(mcTableTexture, int(tablePos)).x);
+        
+        vec3 p2 =  getVertPositionOnEdge(texelFetch(mcTableTexture, int(tablePos)).x);
         tablePos++;
-        placeVertOnEdge(texelFetch(mcTableTexture, int(tablePos)).x);
-        tablePos++;    
+
+        vec3 p3 = getVertPositionOnEdge(texelFetch(mcTableTexture, int(tablePos)).x);    
+        tablePos++; 
+
+        vec3 normal = calculateNormal(p1, p2, p3);
+
+        setupVertex(p1, normal);
+        EmitVertex();
+
+        setupVertex(p2, normal);
+        EmitVertex();
+        
+        setupVertex(p3, normal);
+        EmitVertex();
+
         EndPrimitive();        
     }
 }

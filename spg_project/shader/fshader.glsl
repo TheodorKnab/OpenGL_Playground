@@ -25,13 +25,6 @@ layout(binding = 5) uniform sampler2D displacementX;
 layout(binding = 6) uniform sampler2D displacementY;
 layout(binding = 7) uniform sampler2D displacementZ;
 
-// uniform sampler3D densityTexture;
-// uniform sampler2D diffuseX;
-// uniform sampler2D diffuseY;
-// uniform sampler2D diffuseZ;
-// uniform sampler2D displacementX;
-// uniform sampler2D displacementY;
-// uniform sampler2D displacementZ;
 
 void main()
 {

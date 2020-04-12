@@ -28,7 +28,7 @@ uniform int cameraSector;
 void main()
 {
     //instanceID = gl_InstanceID;   
-    vs_out.wsCoord = vec3(aPos.x, aPos.y, cameraSector * (densityTextureDimensions.z) + gl_InstanceID);
+    vs_out.wsCoord = vec3(aPos.x, aPos.y, cameraSector * (densityTextureDimensions.z - 1) + gl_InstanceID);
     vs_out.uvw = vec3(aPos.x / densityTextureDimensions.x, aPos.y / densityTextureDimensions.y ,  gl_InstanceID / (densityTextureDimensions.z));
 
 

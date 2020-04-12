@@ -4,7 +4,12 @@
 
 unsigned char* imageLoader::loadImageData(char const* filename, int* x, int* y, int* channelsInFile, int desiredChannels) {
 	stbi_set_flip_vertically_on_load(true);
-	return stbi_load(filename, x, y, channelsInFile, desiredChannels);
+	stbi_uc* data = stbi_load(filename, x, y, channelsInFile, desiredChannels);
+	if (!data)
+	{
+		std::cout << "Failed to load texture \"" << filename << "\"" << std::endl;
+	}
+	return data;;
 }
 
 

@@ -60,6 +60,7 @@ glm::mat4 trans = glm::mat4(1.0f);
 Shader* marchingCubesShader;
 unsigned int VAO, VBO, EBO;
 unsigned int diffuseX, diffuseY, diffuseZ;
+unsigned int displacementX, displacementY, displacementZ;
 
 unsigned int FBO;
 unsigned int FBOtexture;
@@ -227,35 +228,39 @@ void init()
 	int width, height, nrChannels;
 
 	unsigned char* data = imageLoader::loadImageData("textures/stone_wall_X_2K_Albedo.jpg", &width, &height, &nrChannels, 0);
-	if (!data)
-	{
-		std::cout << "Failed to load texture" << std::endl;
-	}
 	glGenTextures(1, &diffuseX);
 	imageLoader::setDefault2DTextureFromData(diffuseX, width, height, data);
-	imageLoader::freeImage((data));	
-
-
+	imageLoader::freeImage((data));
 	
-	data = imageLoader::loadImageData("textures/stone_wall_X_2K_Albedo.jpg", &width, &height, &nrChannels, 0);
-	if (!data)
-	{
-		std::cout << "Failed to load texture" << std::endl;
-	}
+	
+	data = imageLoader::loadImageData("textures/rock_jagged_Y_2K_Albedo.jpg", &width, &height, &nrChannels, 0);
 	glGenTextures(1, &diffuseY);
 	imageLoader::setDefault2DTextureFromData(diffuseY, width, height, data);
 	imageLoader::freeImage((data));
 
 	
-	
 	data = imageLoader::loadImageData("textures/moss_rock_Z_2K_Albedo.jpg", &width, &height, &nrChannels, 0);
-	if (!data)
-	{
-		std::cout << "Failed to load texture" << std::endl;
-	}
 	glGenTextures(1, &diffuseZ);
 	imageLoader::setDefault2DTextureFromData(diffuseZ, width, height, data);
 	imageLoader::freeImage((data));
+
+	data = imageLoader::loadImageData("textures/stone_wall_X_2K_Displacement.jpg", &width, &height, &nrChannels, 0);	
+	glGenTextures(1, &displacementX);
+	imageLoader::setDefault2DTextureFromData(displacementX, width, height, data);
+	imageLoader::freeImage((data));
+
+
+	data = imageLoader::loadImageData("textures/rock_jagged_Y_2K_Displacement.jpg", &width, &height, &nrChannels, 0);
+	glGenTextures(1, &displacementY);
+	imageLoader::setDefault2DTextureFromData(displacementY, width, height, data);
+	imageLoader::freeImage((data));
+
+
+	data = imageLoader::loadImageData("textures/moss_rock_Z_2K_Displacement.jpg", &width, &height, &nrChannels, 0);
+	glGenTextures(1, &displacementZ);
+	imageLoader::setDefault2DTextureFromData(displacementZ, width, height, data);
+	imageLoader::freeImage((data));
+
 	
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -271,7 +276,7 @@ void reshape(int w, int h)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	//gluPerspective(60, (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1, 50);
-	proj = glm::perspective(glm::radians(60.0f), static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),0.1f, 300.f);
+	proj = glm::perspective(glm::radians(60.0f), static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),0.1f, 600.f);
 	
 	glMatrixMode(GL_MODELVIEW);
 }
@@ -298,7 +303,7 @@ void display()
 	{
 		reload = false;
 		oldcameraSector = cameraSector;
-		computeShader3DTexture->use();
+		computeShader3DTexture->use();	
 
 		printf("Camera Height %f \n", -cam.getPosition().z);
 
@@ -308,7 +313,7 @@ void display()
 		glActiveTexture(GL_TEXTURE0);
 
 
-		computeShader3DTexture->setInt("texturePosition", cameraSector);
+		computeShader3DTexture->setInt("cameraSector", cameraSector);
 		glBindTexture(GL_TEXTURE_3D, densityTextureA);
 		glBindImageTexture(0, densityTextureA, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 
@@ -316,7 +321,7 @@ void display()
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 
-		computeShader3DTexture->setInt("texturePosition", cameraSector - 1);
+		computeShader3DTexture->setInt("cameraSector", cameraSector - 1);
 		glBindTexture(GL_TEXTURE_3D, densityTextureB);
 		glBindImageTexture(0, densityTextureB, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16F);
 		
@@ -377,6 +382,15 @@ void display()
 
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D, diffuseZ);
+	
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D, displacementX);
+
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, displacementY);
+
+	glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_2D, displacementZ);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_BUFFER, mcTableTexture);
