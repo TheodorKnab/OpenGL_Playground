@@ -223,8 +223,7 @@ void init()
 	glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, mcTableBuffer);
 
 
-	//____________________TEXTURES__________________
-
+#pragma region TEXTURES
 	int width, height, nrChannels;
 
 	unsigned char* data = imageLoader::loadImageData("textures/stone_wall_X_2K_Albedo.jpg", &width, &height, &nrChannels, 0);
@@ -260,7 +259,7 @@ void init()
 	glGenTextures(1, &displacementZ);
 	imageLoader::setDefault2DTextureFromData(displacementZ, width, height, data);
 	imageLoader::freeImage((data));
-
+#pragma endregion
 	
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -305,7 +304,7 @@ void display()
 		oldcameraSector = cameraSector;
 		computeShader3DTexture->use();	
 
-		printf("Camera Height %f \n", -cam.getPosition().z);
+		printf("Camera Position %f %f %f \n", cam.getPosition().x, cam.getPosition().y, cam.getPosition().z);
 
 		printf("Camera Sector %i \n", cameraSector);
 		
@@ -402,6 +401,7 @@ void display()
 	marchingCubesShader->setMat4("view", view);
 	model = glm::mat4(1.0f);
 	marchingCubesShader->setMat4("model", model);
+	marchingCubesShader->setVec3("viewPos", glm::vec3((glm::vec4(cam.getPosition(),1) * proj)));
 	glBindVertexArray(VAO);
 	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth -1), textureHeight-1);
 

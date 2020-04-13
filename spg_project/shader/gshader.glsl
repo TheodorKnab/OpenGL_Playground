@@ -19,8 +19,6 @@ out GS_Out{
     vec3 fColor;
 } gs_out;
 
-
-
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
@@ -51,7 +49,7 @@ int edge_start[72] = {
     1,0,0,
     0,0,0,
     // 4
-    0,1,0,  
+    0,1,0,
     0,1,1,
     // 5
     0,1,1,
@@ -75,8 +73,6 @@ int edge_start[72] = {
     1,0,0,
     1,1,0
 };
-
-
 
 vec4 cornerAmask0123[12] = {
     vec4(1, 0, 0, 0),
@@ -139,7 +135,6 @@ vec4 cornerBmask4567[12] = {
     vec4(0, 0, 1, 0),
     vec4(0, 0, 0, 1),    
 }; 
-
 
 vec3 ComputeNormal(sampler3D tex, vec3 uvw)
 {    
