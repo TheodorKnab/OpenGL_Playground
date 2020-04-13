@@ -19,8 +19,12 @@ GLfloat cameraMoveTimer = 0;
 
 GLfloat x_rot = 0, y_rot = 0, z_rot = 0;
 GLfloat t_old = 0;
-GLfloat camSpeed = 30;
+GLfloat camSpeed = 10;
 
+float heightScale = 0.05;
+float heightScaleStep = 0.01;
+unsigned int primaryLayers = 10;
+unsigned int secondaryLayers = 5;
 
 CatmullRomCurve position_curve;
 squadCurve rot_curve;
@@ -58,9 +62,11 @@ glm::mat4 model = glm::mat4(1.0f);
 glm::mat4 trans = glm::mat4(1.0f);
 
 Shader* marchingCubesShader;
+Shader* displacementShader;
 unsigned int VAO, VBO, EBO;
 unsigned int diffuseX, diffuseY, diffuseZ;
 unsigned int displacementX, displacementY, displacementZ;
+unsigned int normalY;
 
 unsigned int FBO;
 unsigned int FBOtexture;
@@ -119,6 +125,7 @@ void loadShaders() {
 	reload = true;
 	//Basic Default Shadow Mapping
 	marchingCubesShader = new Shader("shader/vshader.glsl", "shader/fshader.glsl", "shader/gshader.glsl");
+	displacementShader = new Shader("shader/vdispShader.glsl", "shader/fdispShader.glsl");
 	computeShader3DTexture = new Shader("shader/cshader.glsl");
 }
 
@@ -171,16 +178,6 @@ void init()
 	glBindVertexArray(0);
 
 	
-	glGenBuffers(1, &quadVBO);
-	glGenVertexArrays(1, &quadVAO);
-	glBindVertexArray(quadVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-	
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
 
 	loadShaders();
 	
@@ -259,6 +256,11 @@ void init()
 	glGenTextures(1, &displacementZ);
 	imageLoader::setDefault2DTextureFromData(displacementZ, width, height, data);
 	imageLoader::freeImage((data));
+
+	data = imageLoader::loadImageData("textures/rock_jagged_Y_2K_Normal.jpg", &width, &height, &nrChannels, 0);
+	glGenTextures(1, &normalY);
+	imageLoader::setDefault2DTextureFromData(normalY, width, height, data);
+	imageLoader::freeImage((data));
 #pragma endregion
 	
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -280,7 +282,97 @@ void reshape(int w, int h)
 	glMatrixMode(GL_MODELVIEW);
 }
 
+void renderQuad()
+{
+	if (quadVAO == 0)
+	{
+		// positions
+		glm::vec3 pos1(-1.0f, 1.0f, 0.0f);
+		glm::vec3 pos2(-1.0f, -1.0f, 0.0f);
+		glm::vec3 pos3(1.0f, -1.0f, 0.0f);
+		glm::vec3 pos4(1.0f, 1.0f, 0.0f);
+		// texture coordinates
+		glm::vec2 uv1(0.0f, 1.0f);
+		glm::vec2 uv2(0.0f, 0.0f);
+		glm::vec2 uv3(1.0f, 0.0f);
+		glm::vec2 uv4(1.0f, 1.0f);
+		// normal vector
+		glm::vec3 nm(0.0f, 0.0f, 1.0f);
 
+		// calculate tangent/bitangent vectors of both triangles
+		glm::vec3 tangent1, bitangent1;
+		glm::vec3 tangent2, bitangent2;
+		// triangle 1
+		// ----------
+		glm::vec3 edge1 = pos2 - pos1;
+		glm::vec3 edge2 = pos3 - pos1;
+		glm::vec2 deltaUV1 = uv2 - uv1;
+		glm::vec2 deltaUV2 = uv3 - uv1;
+
+		float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+		tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+		tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+		tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+		tangent1 = glm::normalize(tangent1);
+
+		bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+		bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+		bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+		bitangent1 = glm::normalize(bitangent1);
+
+		// triangle 2
+		// ----------
+		edge1 = pos3 - pos1;
+		edge2 = pos4 - pos1;
+		deltaUV1 = uv3 - uv1;
+		deltaUV2 = uv4 - uv1;
+
+		f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+		tangent2.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+		tangent2.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+		tangent2.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+		tangent2 = glm::normalize(tangent2);
+
+
+		bitangent2.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+		bitangent2.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+		bitangent2.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+		bitangent2 = glm::normalize(bitangent2);
+
+
+		float quadVertices[] = {
+			// positions            // normal         // texcoords  // tangent                          // bitangent
+			pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+			pos2.x, pos2.y, pos2.z, nm.x, nm.y, nm.z, uv2.x, uv2.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+			pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+
+			pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+			pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+			pos4.x, pos4.y, pos4.z, nm.x, nm.y, nm.z, uv4.x, uv4.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z
+		};
+		// configure plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
+	}
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+}
 
 void display()
 {
@@ -327,7 +419,7 @@ void display()
 		glDispatchCompute(textureWidth, textureDepth, textureHeight);
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
-	
+
 	
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glClearColor(0.5f, 0.9f, 1.0f, 1.0f);
@@ -385,6 +477,7 @@ void display()
 	glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D, displacementX);
 
+	
 	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_2D, displacementY);
 
@@ -401,15 +494,42 @@ void display()
 	marchingCubesShader->setMat4("view", view);
 	model = glm::mat4(1.0f);
 	marchingCubesShader->setMat4("model", model);
-	marchingCubesShader->setVec3("viewPos", glm::vec3((glm::vec4(cam.getPosition(),1) * proj)));
+	marchingCubesShader->setVec3("viewPos", cam.getPosition());
 	glBindVertexArray(VAO);
 	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth -1), textureHeight-1);
 
 
 	marchingCubesShader->setInt("cameraSector", cameraSector - 1);
+
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, densityTextureB);
 	glDrawArraysInstanced(GL_POINTS, 0, (textureWidth - 1) * (textureDepth - 1), textureHeight-1);
-	//glDrawArrays(GL_POINTS, 0, 2);
+
+
+	displacementShader->use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, diffuseY);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, displacementY);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalY);
+	displacementShader->setInt("diffuseMap", 0);
+	displacementShader->setInt("displacementMap", 1);
+	displacementShader->setInt("normalMap", 2);
+	displacementShader->setInt("cameraSector", cameraSector);
+	displacementShader->setFloat("heightScale", heightScale);
+	displacementShader->setFloat("normalLevel", normalLevel);
+	displacementShader->setInt("primaryLayers", primaryLayers);
+	displacementShader->setInt("secondaryLayers", secondaryLayers);
+	displacementShader->setMat4("projection", proj);
+	displacementShader->setMat4("view", view);
+	model = glm::translate(model, glm::vec3(0,0,-1));
+	model = glm::scale(model, glm::vec3(10));
+	displacementShader->setMat4("model", model);
+	displacementShader->setVec3("viewPos", cam.getPosition());
+	
+	renderQuad();
 	glutSwapBuffers();
 }
 
@@ -444,7 +564,9 @@ void mouse(int button, int state, int x, int y)
 		// Each wheel event reports like a button click, GLUT_DOWN then GLUT_UP
 		if (state == GLUT_UP) return; // Disregard redundant GLUT_UP events
 		normalLevel += button == 3 ? normalLevelStep : -normalLevelStep;
-		normalLevel = glm::clamp(normalLevel, 0.f, 1.f);
+		normalLevel = glm::clamp(normalLevel, 0.f, 100.f);
+		heightScale += button == 3 ? heightScaleStep : -heightScaleStep;
+		heightScale = glm::clamp(heightScale, 0.f, 100.f);
 	}
 }
 
@@ -522,6 +644,42 @@ void keyboard(unsigned char key, int x, int y)
 		position_curve.clear();
 	}
 
+	//HeightScale +
+	if (key == '1')
+	{
+		heightScale += heightScaleStep;
+	}
+
+	//HeightScale -
+	if (key == '2')
+	{
+		heightScale -= heightScaleStep;
+	}
+
+	//primaryLayers +
+	if (key == '3')
+	{
+		primaryLayers++;
+	}
+
+	//primaryLayers -
+	if (key == '4')
+	{
+		if(primaryLayers > 1) primaryLayers--;
+	}
+	//secondaryLayers +
+	if (key == '5')
+	{
+		secondaryLayers++;
+	}
+
+	//secondaryLayers -
+	if (key == '6')
+	{
+		if (secondaryLayers > 1) secondaryLayers--;
+	}
+
+	
 	//speed + 
 	if (key == '.')
 	{

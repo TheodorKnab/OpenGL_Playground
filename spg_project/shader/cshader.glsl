@@ -317,7 +317,6 @@ void main()
 
     density += 4 * cnoise( 2* vec4(pos.xy * 3, pos.z * 6, 1), vec4(100,100,100,100)) ;
 
-    density = pos.x - 0.01;
     //DONT clamp
     vec4 pixel = vec4(density, 0, 0, 1);
 
