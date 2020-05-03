@@ -20,9 +20,9 @@ public:
 	unsigned int ID;
 
 	// constructor reads and builds the shader
-	Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const char* geometryPath = nullptr);
-
+	Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const char* geometryPath = nullptr, const char* transformFeedbackOutVar[] = nullptr, const unsigned int varAmount = 0);
 	Shader(const GLchar* computePath);
+	~Shader();
 
 	void create(const GLchar* vertexPath, const GLchar* fragmentPath);
 	// use/activate the shader

@@ -43,6 +43,7 @@ static const GLfloat materialShininess = 20.0;
 
 
 std::vector<float> points;
+std::vector<float> particles_test_array;
 float pointScale = 1;
 
 float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
@@ -92,8 +93,8 @@ std::vector<glm::vec3> lightPos{
 	glm::vec3(5.f, 10.f, -10.f)
 };
 
-long oldTimeSinceStart;
-int deltaTime;
+unsigned long oldTimeSinceStart;
+float deltaTime;
 //Shadow Map
 std::vector<unsigned int> depthMapFBO;
 const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
@@ -121,11 +122,52 @@ int cameraSectorHeight = 255;
 bool reload = false;
 
 
+//Particle Shader
+Shader* particleDisplayShader;
+Shader* particleGenerationShader;
+unsigned int particleVBO[2];
+unsigned int particleTransformFeedbackBuffer[2];
+unsigned int particleVAO;
+const unsigned int maxParticles = 50;
+//test Particle Input
+std::vector<float> particles_test;
+bool isFirstDraw = true;
+
+int currentVB = 0;
+int currentTFB = 1;
+
+struct particleStruct
+{
+	glm::vec3 position;
+	glm::vec3 velocity;
+	float lifeTime;
+	unsigned int type;
+};
+
+particleStruct wat = { glm::vec3(1.f,0.f,0.f),glm::vec3(0.f,0.f,0.f), 0.f, 0 };
+
 void loadShaders() {
 	reload = true;
+	if(marchingCubesShader != nullptr)
+	{
+		delete marchingCubesShader;
+		delete displacementShader;
+		delete particleDisplayShader;
+		delete particleGenerationShader;
+		delete computeShader3DTexture;
+	}
 	//Basic Default Shadow Mapping
 	marchingCubesShader = new Shader("shader/vshader.glsl", "shader/fshader.glsl", "shader/gshader.glsl");
 	displacementShader = new Shader("shader/vdispShader.glsl", "shader/fdispShader.glsl");
+	particleDisplayShader = new Shader("shader/vParticleShader.glsl", "shader/fParticleShader.glsl", "shader/gParticleShader.glsl");
+
+	const GLchar* varyings[4];
+	varyings[0] = "outPosition";
+	varyings[1] = "outVelocity";
+	varyings[2] = "outLifeTime";
+	varyings[3] = "outType";
+	
+	particleGenerationShader = new Shader("shader/vParticleTransformShader.glsl", "shader/fParticleTransformShader.glsl", "shader/gParticleTransformShader.glsl", varyings, 4);
 	computeShader3DTexture = new Shader("shader/cshader.glsl");
 }
 
@@ -141,8 +183,9 @@ void init()
 
 	const int arraySize = (textureWidth - 1) * (textureDepth - 1);
 	
-	//initialize vertices
+	//initialize vertices for marching cubes geometry
 	//points = new float[arraySize];
+	
 	
 	for (int i = 0; i < textureWidth - 1; ++i)
 	{
@@ -154,7 +197,6 @@ void init()
 		}		
 	}
 
-	//points = new float[4]{1,0,0,1};
 	
 	GLint iMultiSample = 0;
 	GLint iNumSamples = 0;
@@ -163,7 +205,7 @@ void init()
 	//printf("MSAA on, GL_SAMPLE_BUFFERS = %d, GL_SAMPLES = %d\n", iMultiSample, iNumSamples);
 
 
-
+	//Basic Pass
 	glEnable(GL_DEPTH_TEST);
 	
 	glGenBuffers(1, &VBO);
@@ -177,10 +219,62 @@ void init()
 	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
 
+
+	//Particle Setup
+
+
+	float particles_test_array[] = {
+	   0.f, 0.f, 0.0f,		1.0f, 1.0f, 1.0f,	0.f,	0.f
+	};
+	
+	particleStruct particles;
+	//position
+	particles_test.push_back(0.f);
+	particles_test.push_back(1.f);
+	particles_test.push_back(0.f);
+	//velocity
+	particles_test.push_back(1.f);
+	particles_test.push_back(0.f);
+	particles_test.push_back(0.f);
+
+	//lifetime
+	particles_test.push_back(0.f);
+
+	//type
+	particles_test.push_back(0.f);
+
+	
 	
 
-	loadShaders();
+	glGenBuffers(2, particleVBO);
+	glGenBuffers(2, particleTransformFeedbackBuffer);
+	glGenVertexArrays(1, &particleVAO);
+	glBindVertexArray(particleVAO);
+
+	for (unsigned int i = 0; i < 2; i++) {
+		glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, particleTransformFeedbackBuffer[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, particleVBO[i]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT) * 8 * maxParticles, particles_test.data(), GL_DYNAMIC_DRAW);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, particleVBO[i]);
+	}
 	
+	
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(particleStruct), 0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 3));
+	glEnableVertexAttribArray(2);					
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 6));
+	glEnableVertexAttribArray(3);					
+	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 7));
+	glBindVertexArray(0);
+	
+
+	//Particle feedback
+	
+	loadShaders();
+
+	//3D Texture for marching cubes (x2 for continous creation of the geometry
 	glEnable(GL_TEXTURE_3D);
 	glGenTextures(1, &densityTextureA);
 	glBindTexture(GL_TEXTURE_3D, densityTextureA);
@@ -426,20 +520,20 @@ void display()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//time, ms are taken for sufficient for this exercise 
-	long timeSinceStart = glutGet(GLUT_ELAPSED_TIME);
-	deltaTime = timeSinceStart - oldTimeSinceStart;
+	unsigned long timeSinceStart = glutGet(GLUT_ELAPSED_TIME);
+	deltaTime = (timeSinceStart - oldTimeSinceStart) / 1000.f;
 	oldTimeSinceStart = timeSinceStart;
 
 	if (cameraMoveTimer < cameraMoveTime && in_progress)
 	{
-		cameraMoveTimer += static_cast<float>(deltaTime) / 1000;
+		cameraMoveTimer += deltaTime;
 	}
 
 	//smooth Camera Movement
 
 	if (camMovementVector != glm::vec3(0,0,0))
 	{
-		cam.addToLocalPosition(camSpeed * glm::normalize(camMovementVector) * (static_cast<float>(deltaTime) / 1000));
+		cam.addToLocalPosition(camSpeed * glm::normalize(camMovementVector) * (deltaTime));
 	}
 	
 	//rotate the scene
@@ -461,7 +555,7 @@ void display()
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
-	marchingCubesShader->use();
+	/*marchingCubesShader->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, densityTextureA);
 
@@ -529,7 +623,48 @@ void display()
 	displacementShader->setMat4("model", model);
 	displacementShader->setVec3("viewPos", cam.getPosition());
 	
-	renderQuad();
+	renderQuad();*/
+
+
+	particleGenerationShader->use();
+
+	glEnable(GL_RASTERIZER_DISCARD);
+	glBindVertexArray(particleVAO);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, particleVBO[currentVB]);
+	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, particleTransformFeedbackBuffer[currentTFB]);
+
+
+	glBeginTransformFeedback(GL_POINTS);
+
+	
+	if (isFirstDraw) {
+		glDrawArrays(GL_POINTS, 0, 1);
+
+		isFirstDraw = false;
+	}
+	else {
+		glDrawTransformFeedback(GL_POINTS, particleTransformFeedbackBuffer[currentVB]);
+	}
+	
+	//glDrawArrays(GL_POINTS, 0, 1);
+
+	glEndTransformFeedback();
+	
+	glDisable(GL_RASTERIZER_DISCARD);
+
+	
+	particleDisplayShader->use();
+	glBindBuffer(GL_ARRAY_BUFFER, particleTransformFeedbackBuffer[currentTFB]);
+	particleDisplayShader->setMat4("projection", proj);
+	particleDisplayShader->setMat4("view", view);
+	particleDisplayShader->setMat4("model", model);
+	//glDrawTransformFeedback(GL_POINTS, particleTransformFeedbackBuffer[currentTFB]);
+	
+	glDrawArrays(GL_POINTS, 0, maxParticles);
+
+	currentTFB = currentVB;
+	currentVB = (currentTFB + 1) & 1 ;;
 	glutSwapBuffers();
 }
 

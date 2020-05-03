@@ -144,6 +144,7 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="LUT.h" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="squadCurve.cpp" />
     <ClCompile Include="src\glad.c" />
@@ -156,6 +157,7 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="squadCurve.h" />
   </ItemGroup>

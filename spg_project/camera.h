@@ -1,7 +1,6 @@
 #pragma once
 #include <iostream>
 #include <vector>
-#include <GL/glut.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <glm/glm.hpp>

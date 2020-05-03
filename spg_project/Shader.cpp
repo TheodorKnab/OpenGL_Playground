@@ -1,6 +1,6 @@
 #include "Shader.h"
-
-Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
+//learnopengl.com
+Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath, const char* transformFeedbackOutVar[], const unsigned int varAmount)
 {
     // 1. retrieve the vertex/fragment source code from filePath
     std::string vertexCode;
@@ -72,6 +72,12 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geo
     glAttachShader(ID, fragment);
     if (geometryPath != nullptr)
         glAttachShader(ID, geometry);
+
+	///////
+    if (transformFeedbackOutVar != nullptr)
+    {
+        glTransformFeedbackVaryings(ID, varAmount, transformFeedbackOutVar, GL_INTERLEAVED_ATTRIBS);
+    }
     glLinkProgram(ID);
     checkCompileErrors(ID, "PROGRAM");
     // delete the shaders as they're linked into our program now and no longer necessery
@@ -79,7 +85,6 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geo
     glDeleteShader(fragment);
     if (geometryPath != nullptr)
         glDeleteShader(geometry);
-
 }
 
 Shader::Shader(const GLchar* computePath)
@@ -120,6 +125,10 @@ Shader::Shader(const GLchar* computePath)
     checkCompileErrors(ID, "PROGRAM");
     // delete the shaders as they're linked into our program now and no longer necessery
     glDeleteShader(compute);
+}
+
+Shader::~Shader()
+{
 }
 
 void Shader::use()
