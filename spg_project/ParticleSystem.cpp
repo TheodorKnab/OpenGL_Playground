@@ -32,6 +32,6 @@ void ParticleSystem::drawPass() const
 {
 }
 
-bool ParticleSystem::createVertexBuffers()
+void ParticleSystem::createVertexBuffers()
 {
 }

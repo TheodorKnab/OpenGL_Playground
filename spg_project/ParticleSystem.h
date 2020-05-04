@@ -16,7 +16,7 @@ public:
 private:
 	void drawPassEmitter();
 	void drawPass() const;
-	bool createVertexBuffers();
+	void createVertexBuffers();
 	
 
 	struct ParticleShaderInput

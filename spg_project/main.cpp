@@ -128,7 +128,14 @@ Shader* particleGenerationShader;
 unsigned int particleVBO[2];
 unsigned int particleTransformFeedbackBuffer[2];
 unsigned int particleVAO;
-const unsigned int maxParticles = 50;
+const unsigned int maxParticles = 10000000;
+const unsigned int emitterParticles = 10;
+
+unsigned int randomTexture;
+
+bool spawnParticles = false;
+glm::vec3 spawnParticlePosition = glm::vec3(0,0,0);
+
 //test Particle Input
 std::vector<float> particles_test;
 bool isFirstDraw = true;
@@ -141,10 +148,9 @@ struct particleStruct
 	glm::vec3 position;
 	glm::vec3 velocity;
 	float lifeTime;
-	unsigned int type;
+	float type;
 };
 
-particleStruct wat = { glm::vec3(1.f,0.f,0.f),glm::vec3(0.f,0.f,0.f), 0.f, 0 };
 
 void loadShaders() {
 	reload = true;
@@ -176,7 +182,7 @@ void init()
 {
 	//add points for Camera path
 
-	cam.setRotation(glm::quat(-0.709228, 0.033732, 0.042226, 0.702905));
+	//cam.setRotation(glm::quat(-0.709228, 0.033732, 0.042226, 0.702905));
 	
 	GLenum err = glewInit();
 	glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -223,50 +229,45 @@ void init()
 	//Particle Setup
 
 
-	float particles_test_array[] = {
-	   0.f, 0.f, 0.0f,		1.0f, 1.0f, 1.0f,	0.f,	0.f
-	};
-	
-	particleStruct particles;
-	//position
-	particles_test.push_back(0.f);
-	particles_test.push_back(1.f);
-	particles_test.push_back(0.f);
-	//velocity
-	particles_test.push_back(1.f);
-	particles_test.push_back(0.f);
-	particles_test.push_back(0.f);
+	auto* particles = new particleStruct[maxParticles];
+	for (int i = 0; i < emitterParticles; i++)
+	{
+		//position
+		particles[i].position = glm::vec3(i/10.f, 1.f, 0.f);
 
-	//lifetime
-	particles_test.push_back(0.f);
+		//velocity
+		particles[i].velocity = glm::vec3(0.f, 0.f, 0.f);
 
-	//type
-	particles_test.push_back(0.f);
+		//lifetime
+		particles[i].lifeTime = float(i)/ 10.f;
 
-	
+		//type
+		particles[i].type = 0;
+	}
+
 	
 
 	glGenBuffers(2, particleVBO);
-	glGenBuffers(2, particleTransformFeedbackBuffer);
-	glGenVertexArrays(1, &particleVAO);
-	glBindVertexArray(particleVAO);
-
+	glGenTransformFeedbacks(2, particleTransformFeedbackBuffer);
 	for (unsigned int i = 0; i < 2; i++) {
 		glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, particleTransformFeedbackBuffer[i]);
 		glBindBuffer(GL_ARRAY_BUFFER, particleVBO[i]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GL_FLOAT) * 8 * maxParticles, particles_test.data(), GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(particleStruct) * maxParticles, particles, GL_DYNAMIC_DRAW);
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, particleVBO[i]);
 	}
-	
-	
+
+	delete[] particles;
+
+	glGenVertexArrays(1, &particleVAO);
+	glBindVertexArray(particleVAO);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(particleStruct), 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 8, 0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 3));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 8, (void*)(sizeof(float) * 3));
 	glEnableVertexAttribArray(2);					
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 6));
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 8, (void*)(sizeof(float) * 6));
 	glEnableVertexAttribArray(3);					
-	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 7));
+	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 8, (void*)(sizeof(float) * 7));
 	glBindVertexArray(0);
 	
 
@@ -356,6 +357,24 @@ void init()
 	imageLoader::setDefault2DTextureFromData(normalY, width, height, data);
 	imageLoader::freeImage((data));
 #pragma endregion
+
+	srand(int("unsinn"));
+	
+	glm::vec3* pRandomData = new glm::vec3[1000];
+	for (unsigned int i = 0; i < 1000; i++) {
+		pRandomData[i].x = (rand() % 10000) / 10000.f;
+		pRandomData[i].y = (rand() % 10000) / 10000.f;
+		pRandomData[i].z = (rand() % 10000) / 10000.f;
+	}
+
+	glGenTextures(1, &randomTexture);
+	glBindTexture(GL_TEXTURE_1D, randomTexture);
+	glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, 1000, 0, GL_RGB, GL_FLOAT, pRandomData);
+	glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+
+	delete[] pRandomData;
 	
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -466,6 +485,31 @@ void renderQuad()
 	glBindVertexArray(quadVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
+}
+
+void createNewParticles()
+{
+
+	auto* particles = new particleStruct[emitterParticles];
+	for (int i = 0; i < emitterParticles; i++)
+	{
+		//position
+		particles[i].position = glm::vec3(i / 10.f, 1.f, 0.f);
+
+		//velocity
+		particles[i].velocity = glm::vec3(0.f, 0.f, 0.f);
+
+		//lifetime
+		particles[i].lifeTime = float(i) * 7;
+
+		//type
+		particles[i].type = 0;
+	}
+
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(particleStruct) * emitterParticles, particles);
+	//glBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(particleStruct) * emitterParticles, particles);
+
+	delete[] particles;
 }
 
 void display()
@@ -626,20 +670,40 @@ void display()
 	renderQuad();*/
 
 
-	particleGenerationShader->use();
-
+	particleGenerationShader->use(); 
+	particleGenerationShader->setFloat("deltaTime", deltaTime);
+	particleGenerationShader->setFloat("programTime", oldTimeSinceStart);
+	particleGenerationShader->setVec3("spawnPosition", spawnParticlePosition);
+	particleGenerationShader->setBool("spawnNewEmitter", spawnParticles);
+	
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_1D, randomTexture);
+	
 	glEnable(GL_RASTERIZER_DISCARD);
-	glBindVertexArray(particleVAO);
+	//glBindVertexArray(particleVAO);
+
+
 	
 	glBindBuffer(GL_ARRAY_BUFFER, particleVBO[currentVB]);
 	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, particleTransformFeedbackBuffer[currentTFB]);
 
-
+	//updated with new particles
+	
+	
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(particleStruct), 0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 3));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 6));
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 7));
+	
 	glBeginTransformFeedback(GL_POINTS);
 
 	
 	if (isFirstDraw) {
-		glDrawArrays(GL_POINTS, 0, 1);
+		glDrawArrays(GL_POINTS, 0, emitterParticles);
 
 		isFirstDraw = false;
 	}
@@ -647,22 +711,40 @@ void display()
 		glDrawTransformFeedback(GL_POINTS, particleTransformFeedbackBuffer[currentVB]);
 	}
 	
-	//glDrawArrays(GL_POINTS, 0, 1);
-
+	//glDrawArrays(GL_POINTS, 0, 1);	
 	glEndTransformFeedback();
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
+	glDisableVertexAttribArray(3);
 	
+
 	glDisable(GL_RASTERIZER_DISCARD);
 
+	if (spawnParticles)
+	{
+		spawnParticles = false;
+	}
 	
 	particleDisplayShader->use();
-	glBindBuffer(GL_ARRAY_BUFFER, particleTransformFeedbackBuffer[currentTFB]);
+	
 	particleDisplayShader->setMat4("projection", proj);
 	particleDisplayShader->setMat4("view", view);
 	particleDisplayShader->setMat4("model", model);
-	//glDrawTransformFeedback(GL_POINTS, particleTransformFeedbackBuffer[currentTFB]);
-	
-	glDrawArrays(GL_POINTS, 0, maxParticles);
 
+	glBindBuffer(GL_ARRAY_BUFFER, particleVBO[currentTFB]);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(particleStruct), 0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 3));
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 7));
+	glDrawTransformFeedback(GL_POINTS, particleTransformFeedbackBuffer[currentTFB]);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(3);
+	
 	currentTFB = currentVB;
 	currentVB = (currentTFB + 1) & 1 ;;
 	glutSwapBuffers();
@@ -703,6 +785,13 @@ void mouse(int button, int state, int x, int y)
 		heightScale += button == 3 ? heightScaleStep : -heightScaleStep;
 		heightScale = glm::clamp(heightScale, 0.f, 100.f);
 	}
+
+	if (button == GLUT_MIDDLE_BUTTON)
+	{
+		spawnParticles = true;
+		
+	}
+	
 }
 
 void saveSamplesToFile(int Samples)
@@ -843,6 +932,7 @@ void keyboard_up(unsigned char key, int x, int y)
 	{
 		camMovementVector = glm::vec3(0,0,0);
 	}
+		
 }
 
 void mouse_move(int x, int y)
