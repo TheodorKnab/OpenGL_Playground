@@ -40,9 +40,9 @@ void main() {
 	if(gs_in[0].type == 2.0f)
 		gs_out.fColor = vec4(1,1,1,1);
 	if(gs_in[0].type == 3.0f)
-		gs_out.fColor = vec4(0,0,1,1);
+		gs_out.fColor = vec4(1,0,1,1);
 
-	
-	if(gs_in[0].type != 0.0f)
-    	buildParticle(gl_in[0].gl_Position);
+	//gs_out.fColor = vec4(1,1,1,1);
+	//if(gs_in[0].type != 0.0f)
+    buildParticle(gl_in[0].gl_Position);
 }  

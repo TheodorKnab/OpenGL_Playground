@@ -143,6 +143,11 @@ bool isFirstDraw = true;
 int currentVB = 0;
 int currentTFB = 1;
 
+std::vector<glm::vec3>test_triangle;
+std::vector<glm::vec3>test_triangle2;
+
+
+
 struct particleStruct
 {
 	glm::vec3 position;
@@ -181,7 +186,7 @@ void loadShaders() {
 void init()
 {
 	//add points for Camera path
-
+	cam.setPosition(glm::vec3(0, 0, 0 ));
 	//cam.setRotation(glm::quat(-0.709228, 0.033732, 0.042226, 0.702905));
 	
 	GLenum err = glewInit();
@@ -227,8 +232,15 @@ void init()
 
 
 	//Particle Setup
+	//RayCollisiontTriangles	
+	test_triangle.push_back(glm::vec3(-10, 10, 0));
+	test_triangle.push_back(glm::vec3(10, 10, 0));
+	test_triangle.push_back(glm::vec3(-10, -10, 0));
 
-
+	test_triangle2.push_back(glm::vec3(10, -10, 0));
+	test_triangle2.push_back(glm::vec3(-10, 10, 0));
+	test_triangle2.push_back(glm::vec3(10, 10, 0));
+	
 	auto* particles = new particleStruct[maxParticles];
 	for (int i = 0; i < emitterParticles; i++)
 	{
@@ -258,18 +270,6 @@ void init()
 
 	delete[] particles;
 
-	glGenVertexArrays(1, &particleVAO);
-	glBindVertexArray(particleVAO);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 8, 0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 8, (void*)(sizeof(float) * 3));
-	glEnableVertexAttribArray(2);					
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 8, (void*)(sizeof(float) * 6));
-	glEnableVertexAttribArray(3);					
-	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 8, (void*)(sizeof(float) * 7));
-	glBindVertexArray(0);
-	
 
 	//Particle feedback
 	
@@ -487,29 +487,38 @@ void renderQuad()
 	glBindVertexArray(0);
 }
 
-void createNewParticles()
+bool RayIntersectsTriangle(glm::vec3 rayOrigin,	glm::vec3 rayVector, std::vector<glm::vec3> inTriangle,	glm::vec3& outIntersectionPoint)
 {
-
-	auto* particles = new particleStruct[emitterParticles];
-	for (int i = 0; i < emitterParticles; i++)
+	const float EPSILON = 0.0000001;
+	glm::vec3 vertex0 = inTriangle[0];
+	glm::vec3 vertex1 = inTriangle[1];
+	glm::vec3 vertex2 = inTriangle[2];
+	glm::vec3 edge1, edge2, h, s, q;
+	float a, f, u, v;
+	edge1 = vertex1 - vertex0;
+	edge2 = vertex2 - vertex0;
+	h = glm::cross(rayVector,edge2);
+	a = glm::dot(edge1, h);
+	if (a > -EPSILON && a < EPSILON)
+		return false;    // This ray is parallel to this triangle.
+	f = 1.0 / a;
+	s = rayOrigin - vertex0;
+	u = f * glm::dot(s,h);
+	if (u < 0.0 || u > 1.0)
+		return false;
+	q = glm::cross(s, edge1);
+	v = f * glm::dot(rayVector, q);
+	if (v < 0.0 || u + v > 1.0)
+		return false;
+	// At this stage we can compute t to find out where the intersection point is on the line.
+	float t = f * glm::dot(edge2, q);
+	if (t > EPSILON) // ray intersection
 	{
-		//position
-		particles[i].position = glm::vec3(i / 10.f, 1.f, 0.f);
-
-		//velocity
-		particles[i].velocity = glm::vec3(0.f, 0.f, 0.f);
-
-		//lifetime
-		particles[i].lifeTime = float(i) * 7;
-
-		//type
-		particles[i].type = 0;
+		outIntersectionPoint = rayOrigin + rayVector * t;
+		return true;
 	}
-
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(particleStruct) * emitterParticles, particles);
-	//glBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(particleStruct) * emitterParticles, particles);
-
-	delete[] particles;
+	else // This means that there is a line intersection but not a ray intersection.
+		return false;
 }
 
 void display()
@@ -674,27 +683,40 @@ void display()
 
 	particleGenerationShader->use(); 
 	particleGenerationShader->setFloat("deltaTime", deltaTime);
-	particleGenerationShader->setFloat("programTime", oldTimeSinceStart);
-	particleGenerationShader->setVec3("spawnPosition", spawnParticlePosition);
+	particleGenerationShader->setFloat("programTime", float(oldTimeSinceStart));
 	particleGenerationShader->setBool("spawnNewEmitter", spawnParticles);
 	particleGenerationShader->setFloat("spawnUpdateFactor", heightScale);
 
 
 	if (spawnParticles)
 	{
-		float relativeMouseX = mouse_pos.x / (WINDOW_WIDTH * 0.5f) - 1.0f;
-		float relativeMouseY = mouse_pos.y / (WINDOW_HEIGHT * 0.5f) - 1.0f;
+		float relativeMouseX = (mouse_pos.x / (WINDOW_WIDTH * 0.5f) - 1.0f);
+		float relativeMouseY = (mouse_pos.y / (WINDOW_HEIGHT * 0.5f) - 1.0f);
 
 		glm::mat4 invVP = glm::inverse(proj * view);
-		glm::vec4 screenMousePos = glm::vec4(relativeMouseX, -relativeMouseY, 1.0f, 1.0f);
+		glm::vec4 screenMousePos = glm::vec4(relativeMouseX, relativeMouseY, 1.0f, 1.0f);
 		glm::vec4 worldMousePos = invVP * screenMousePos;
 
-		glm::vec3 rayDir = glm::normalize(glm::vec3(worldMousePos));
-
+		glm::vec3 rayDir = -glm::normalize(glm::vec3(worldMousePos.x, worldMousePos.y, worldMousePos.z));
+		glm::vec3 result;
 		//ray intersection
-		
+		if(RayIntersectsTriangle(cam.getPosition(),rayDir,test_triangle, result))
+		{
+			spawnParticlePosition = -result / 10.f;
+
+		}
+		else if(RayIntersectsTriangle(cam.getPosition(), rayDir, test_triangle2, result))
+		{
+			spawnParticlePosition = -result / 10.f;
+		}
+		else
+		{
+			particleGenerationShader->setBool("spawnNewEmitter", false);
+		}
 		spawnParticles = false;
 	}
+
+	particleGenerationShader->setVec3("spawnPosition", spawnParticlePosition);
 	
 	glActiveTexture(0);
 	glBindTexture(GL_TEXTURE_1D, randomTexture);
@@ -727,8 +749,7 @@ void display()
 	else {
 		glDrawTransformFeedback(GL_POINTS, particleTransformFeedbackBuffer[currentVB]);
 	}
-	
-	//glDrawArrays(GL_POINTS, 0, 1);	
+		
 	glEndTransformFeedback();
 		
 	glDisableVertexAttribArray(0);
@@ -755,12 +776,12 @@ void display()
 	glEnableVertexAttribArray(3);
 	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 7));
 	glDrawTransformFeedback(GL_POINTS, particleTransformFeedbackBuffer[currentTFB]);
+	//glDrawArrays(GL_POINTS, 0, 6);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(3);
-	
+	glDisableVertexAttribArray(3);	
 	currentTFB = currentVB;
-	currentVB = (currentTFB + 1) & 1 ;;
+	currentVB = (currentTFB + 1) & 1;
 	glutSwapBuffers();
 }
 
@@ -1025,8 +1046,6 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "GLEW error");
 			return 1;
 		}
-
-
 		glutMainLoop();
 	}
 }
