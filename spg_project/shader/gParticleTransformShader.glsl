@@ -20,6 +20,7 @@ uniform float programTime;
 uniform sampler1D randomTexture;
 uniform bool spawnNewEmitter;
 uniform vec3 spawnPosition;
+uniform float spawnUpdateFactor;
 
 #define PRIMARY_EMITTER 0.0f                                                
 #define EMITTER 1.0f                                                
@@ -31,13 +32,13 @@ vec3 randomVec(float pos){
     return (rnd - vec3(0.5, 0.5, 0.5)) * 2; //[-1 ... 1]
 }
 
-void spawnParticle(vec3 position, int amount)
+void spawnParticle(vec3 position, int amount, float type)
 {    
 	outPosition = position.xyz;
 	outLifeTime = 0;
-	outType = TYPE_A;
+	outType = type;
     for(int i = 0; i < amount; ++i){        
-        outVelocity = randomVec(((programTime + i) * gs_in[0].lifeTime/13.f)/1000.f) * 10 ;
+        outVelocity = randomVec(((programTime + i) * (gs_in[0].lifeTime + i)/13.f)/1000.f) * 10 ;
         EmitVertex();   
         EndPrimitive();
     }
@@ -59,7 +60,7 @@ void main() {
     float lifeTime = gs_in[0].lifeTime + deltaTime;
     vec3 position = gs_in[0].position + gs_in[0].velocity * deltaTime;
     //gravity
-    vec3 velocity = gs_in[0].velocity + vec3(0,10,0) * deltaTime;
+    vec3 velocity = gs_in[0].velocity + vec3(0,0,-10) * deltaTime;
 
     //used to spawn new emitters on runtime
     if(gs_in[0].type == PRIMARY_EMITTER){
@@ -80,7 +81,7 @@ void main() {
         //velocity gets used for a spawn timer for emitter particles
         outVelocity = gs_in[0].velocity + vec3(deltaTime,0,0);
         if( gs_in[0].velocity.x > 0.02f){            
-            spawnParticle(gs_in[0].position, 20); 
+            spawnParticle(gs_in[0].position, int(20 * (1 - spawnUpdateFactor * 2)), TYPE_A); 
             
             outVelocity = vec3(0,0,0);           
         }
@@ -93,7 +94,23 @@ void main() {
         EndPrimitive();   
     }
 
-    if(gs_in[0].type == TYPE_A && gs_in[0].lifeTime < 1.0f){
+    if(gs_in[0].type == TYPE_A){
+        if(gs_in[0].lifeTime < 1.0f){
+            //emit self
+                
+            outPosition = position;
+            outVelocity = velocity;
+            outLifeTime = lifeTime;
+            outType = gs_in[0].type;    
+            EmitVertex();   
+            EndPrimitive();  
+        } else {
+            //explode            
+            spawnParticle(gs_in[0].position, int(5 * (1 - spawnUpdateFactor * 2)), TYPE_B); 
+        }
+    }   
+
+    if(gs_in[0].type == TYPE_B && gs_in[0].lifeTime < 0.1f){
         //emit self
         outPosition = position;
         outVelocity = velocity;
@@ -101,7 +118,6 @@ void main() {
         outType = gs_in[0].type;    
         EmitVertex();   
         EndPrimitive();  
-    }
-    
+    }    
 }  
 

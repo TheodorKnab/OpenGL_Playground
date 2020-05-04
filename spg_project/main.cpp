@@ -599,7 +599,7 @@ void display()
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
-	/*marchingCubesShader->use();
+	marchingCubesShader->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, densityTextureA);
 
@@ -666,8 +666,10 @@ void display()
 	model = glm::scale(model, glm::vec3(10));
 	displacementShader->setMat4("model", model);
 	displacementShader->setVec3("viewPos", cam.getPosition());
+
 	
-	renderQuad();*/
+	
+	renderQuad();
 
 
 	particleGenerationShader->use(); 
@@ -675,14 +677,29 @@ void display()
 	particleGenerationShader->setFloat("programTime", oldTimeSinceStart);
 	particleGenerationShader->setVec3("spawnPosition", spawnParticlePosition);
 	particleGenerationShader->setBool("spawnNewEmitter", spawnParticles);
+	particleGenerationShader->setFloat("spawnUpdateFactor", heightScale);
+
+
+	if (spawnParticles)
+	{
+		float relativeMouseX = mouse_pos.x / (WINDOW_WIDTH * 0.5f) - 1.0f;
+		float relativeMouseY = mouse_pos.y / (WINDOW_HEIGHT * 0.5f) - 1.0f;
+
+		glm::mat4 invVP = glm::inverse(proj * view);
+		glm::vec4 screenMousePos = glm::vec4(relativeMouseX, -relativeMouseY, 1.0f, 1.0f);
+		glm::vec4 worldMousePos = invVP * screenMousePos;
+
+		glm::vec3 rayDir = glm::normalize(glm::vec3(worldMousePos));
+
+		//ray intersection
+		
+		spawnParticles = false;
+	}
 	
 	glActiveTexture(0);
 	glBindTexture(GL_TEXTURE_1D, randomTexture);
 	
 	glEnable(GL_RASTERIZER_DISCARD);
-	//glBindVertexArray(particleVAO);
-
-
 	
 	glBindBuffer(GL_ARRAY_BUFFER, particleVBO[currentVB]);
 	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, particleTransformFeedbackBuffer[currentTFB]);
@@ -713,6 +730,7 @@ void display()
 	
 	//glDrawArrays(GL_POINTS, 0, 1);	
 	glEndTransformFeedback();
+		
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
@@ -721,10 +739,6 @@ void display()
 
 	glDisable(GL_RASTERIZER_DISCARD);
 
-	if (spawnParticles)
-	{
-		spawnParticles = false;
-	}
 	
 	particleDisplayShader->use();
 	
@@ -785,7 +799,6 @@ void mouse(int button, int state, int x, int y)
 		heightScale += button == 3 ? heightScaleStep : -heightScaleStep;
 		heightScale = glm::clamp(heightScale, 0.f, 100.f);
 	}
-
 	if (button == GLUT_MIDDLE_BUTTON)
 	{
 		spawnParticles = true;

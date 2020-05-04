@@ -73,7 +73,6 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geo
     if (geometryPath != nullptr)
         glAttachShader(ID, geometry);
 
-	///////
     if (transformFeedbackOutVar != nullptr)
     {
         glTransformFeedbackVaryings(ID, varAmount, transformFeedbackOutVar, GL_INTERLEAVED_ATTRIBS);

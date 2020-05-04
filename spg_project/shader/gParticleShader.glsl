@@ -14,7 +14,7 @@ out GS_Out{
 	vec2 texCoord;
 } gs_out;
 
-float size = 0.1f;
+float size = 1f;
 
 void buildParticle(vec4 position)
 {    
@@ -43,6 +43,6 @@ void main() {
 		gs_out.fColor = vec4(0,0,1,1);
 
 	
-	//if(gs_in[0].type != 0.0f)
+	if(gs_in[0].type != 0.0f)
     	buildParticle(gl_in[0].gl_Position);
 }  
