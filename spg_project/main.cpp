@@ -5,7 +5,6 @@
 
 int WINDOW_WIDTH = DEFAULT_WIDTH;
 int WINDOW_HEIGHT = DEFAULT_HEIGHT;
-
 GLfloat manualMovementStep = 0.1;
 GLfloat cube_height_scale_x = 40;
 GLfloat cube_height_scale_y = 29;
@@ -88,18 +87,8 @@ Model* ourModel;
 float normalLevel = 0.3f;
 GLfloat normalLevelStep = 0.1f;
 
-std::vector<glm::vec3> lightPos{
-	glm::vec3(-10.0f, 10.f, -10.f),
-	glm::vec3(5.f, 10.f, -10.f)
-};
-
 unsigned long oldTimeSinceStart;
 float deltaTime;
-//Shadow Map
-std::vector<unsigned int> depthMapFBO;
-const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
-std::vector<unsigned int> depthMap;
-Shader* simpleDepthShader;
 
 Shader *densityShader, *computeShader3DTexture;
 GLuint densityTextureA, densityTextureB;
@@ -110,7 +99,7 @@ unsigned int textureHeight = 256;
 GLuint mcTableTexture;
 GLuint mcTableBuffer;
 
-unsigned int quadVAO, quadVBO;
+unsigned int quadVAO, quadVBO, cubeVAO, cubeVBO;
 GLenum* DrawBuffers = new GLenum[2];
 bool wireframeMode = false;
 
@@ -146,8 +135,6 @@ int currentTFB = 1;
 std::vector<glm::vec3>test_triangle;
 std::vector<glm::vec3>test_triangle2;
 
-
-
 struct particleStruct
 {
 	glm::vec3 position;
@@ -156,6 +143,24 @@ struct particleStruct
 	float type;
 };
 
+Shader* debugShader;
+
+//ShadowMapping VSM
+Shader* shadowMappingDepthShader;
+Shader* shadowMappingBlurShader;
+Shader* shadowMappingDisplayShader;
+
+float ShadowMapCoefficient = 4;
+unsigned int SHADOW_WIDTH = WINDOW_WIDTH* ShadowMapCoefficient;
+unsigned int SHADOW_HEIGHT = WINDOW_HEIGHT * ShadowMapCoefficient;
+const float BLUR_STRENGTH = 0.5f;
+
+unsigned int depthMap;
+unsigned int depthColorMap;
+unsigned int depthMapFBO; 
+unsigned int blurMap;
+unsigned int blurMapFBO;
+glm::vec3 lightPos = glm::vec3(-3, 3, 7);
 
 void loadShaders() {
 	reload = true;
@@ -172,6 +177,7 @@ void loadShaders() {
 	displacementShader = new Shader("shader/vdispShader.glsl", "shader/fdispShader.glsl");
 	particleDisplayShader = new Shader("shader/vParticleShader.glsl", "shader/fParticleShader.glsl", "shader/gParticleShader.glsl");
 
+
 	const GLchar* varyings[4];
 	varyings[0] = "outPosition";
 	varyings[1] = "outVelocity";
@@ -180,6 +186,11 @@ void loadShaders() {
 	
 	particleGenerationShader = new Shader("shader/vParticleTransformShader.glsl", "shader/fParticleTransformShader.glsl", "shader/gParticleTransformShader.glsl", varyings, 4);
 	computeShader3DTexture = new Shader("shader/cshader.glsl");
+	shadowMappingDepthShader = new Shader("shader/vShadowMappingDepthShader.glsl", "shader/fShadowMappingDepthShader.glsl");
+	shadowMappingBlurShader	= new Shader("shader/vShadowMappingBlurShader.glsl", "shader/fShadowMappingBlurShader.glsl");
+	shadowMappingDisplayShader = new Shader("shader/vShadowMappingDisplayShader.glsl", "shader/fShadowMappingDisplayShader.glsl");
+	debugShader = new Shader("shader/vdebug.glsl", "shader/fdebug.glsl");
+
 }
 
 //initialization of the application.
@@ -314,6 +325,51 @@ void init()
 	glBindTexture(GL_TEXTURE_BUFFER, mcTableTexture);
 	glTexBuffer(GL_TEXTURE_BUFFER, GL_R32I, mcTableBuffer);
 
+	//Shadow Mapping
+
+	//depthFBO
+	glGenFramebuffers(1, &depthMapFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+
+	//glGenTextures(1, &depthMap);
+	//glBindTexture(GL_TEXTURE_2D, depthMap);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_RGB, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 0.0, 0.0, 0.0, 1.0 };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	// attach depth texture as FBO's depth buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// Creating the blur FBO
+	glGenFramebuffers(1, &blurMapFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, blurMapFBO);
+
+	glGenTextures(1, &blurMap);
+	glBindTexture(GL_TEXTURE_2D, blurMap);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SHADOW_WIDTH * BLUR_STRENGTH, SHADOW_HEIGHT * BLUR_STRENGTH, 0, GL_RGB, GL_FLOAT, 0);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blurMap, 0);	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 #pragma region TEXTURES
 	int width, height, nrChannels;
@@ -356,7 +412,6 @@ void init()
 	glGenTextures(1, &normalY);
 	imageLoader::setDefault2DTextureFromData(normalY, width, height, data);
 	imageLoader::freeImage((data));
-#pragma endregion
 
 	srand(int("unsinn"));
 	
@@ -375,17 +430,19 @@ void init()
 	glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 
 	delete[] pRandomData;
-	
+#pragma endregion
+
 	glBindTexture(GL_TEXTURE_2D, 0);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-
-
 
 void reshape(int w, int h)
 {
 	WINDOW_WIDTH = w;
 	WINDOW_HEIGHT = h;
+	SHADOW_WIDTH = WINDOW_WIDTH * ShadowMapCoefficient;
+	SHADOW_HEIGHT = WINDOW_HEIGHT * ShadowMapCoefficient;
 	glViewport(0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h));
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -521,6 +578,186 @@ bool RayIntersectsTriangle(glm::vec3 rayOrigin,	glm::vec3 rayVector, std::vector
 		return false;
 }
 
+
+
+void renderCube()
+{
+	// initialize (if necessary)
+	if (cubeVAO == 0)
+	{
+		float vertices[] = {
+			// back face
+			-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+			 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+			 1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+			 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+			-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+			-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+			// front face
+			-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+			 1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+			 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+			 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+			-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+			-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+			// left face
+			-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+			-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+			-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+			-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+			-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+			-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+			// right face
+			 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+			 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+			 1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+			 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+			 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+			 1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+			// bottom face
+			-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+			 1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+			 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+			 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+			-1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+			-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+			// top face
+			-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+			 1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+			 1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+			 1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+			-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+			-1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+		};
+		glGenVertexArrays(1, &cubeVAO);
+		glGenBuffers(1, &cubeVBO);
+		// fill buffer
+		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		// link vertex attributes
+		glBindVertexArray(cubeVAO);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+	// render Cube
+	glBindVertexArray(cubeVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+}
+
+void renderShadowScene(Shader* shader)
+{
+	shader->setMat4("projection", proj);
+	shader->setMat4("view", view);
+	//floor
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(0, 0, -3));
+	model = glm::scale(model, glm::vec3(10));
+	model = glm::translate(model, glm::vec3(-2, 0, 0));
+	shader->setMat4("model", model);
+	renderQuad();
+	//Cube
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-20, 0, 2));
+	model = glm::translate(model, glm::vec3(0, glm::sin(oldTimeSinceStart / 1000.f), 0));
+	shader->setMat4("model", model);
+	renderCube();
+
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-19, -1, -1.5));
+	shader->setMat4("model", model);
+	renderCube();
+
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-21, 4, -1));
+	shader->setMat4("model", model);
+	renderCube();
+}
+
+
+void renderDepth() {
+	float near_plane = 1.0f, far_plane = 30;
+	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glm::mat4 lightSpaceMatrix;
+	CalcLightSpaceMatrix(near_plane, far_plane, lightPos, lightSpaceMatrix);
+
+	shadowMappingDepthShader->use();
+	shadowMappingDepthShader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	renderShadowScene(shadowMappingDepthShader);
+}
+
+void blurDepth() {
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, blurMapFBO);
+	glViewport(0, 0, WINDOW_WIDTH * ShadowMapCoefficient * BLUR_STRENGTH, WINDOW_HEIGHT * ShadowMapCoefficient * BLUR_STRENGTH);
+	shadowMappingBlurShader->use();
+	shadowMappingBlurShader->setVec3("ScaleU", glm::vec3(1.0f / (WINDOW_WIDTH * ShadowMapCoefficient * BLUR_STRENGTH), 0.0f,0.0f));
+	//set textureSource (sampler2D uniform) to 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
+	//Preparing to draw quad
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(-WINDOW_WIDTH / 2, WINDOW_WIDTH / 2, -WINDOW_HEIGHT / 2, WINDOW_HEIGHT / 2, 1, 20);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	//Drawing quad 
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(0, 0, -5));
+	renderQuad();
+
+	 // Bluring vertically
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, depthMapFBO);
+	glViewport(0, 0, WINDOW_WIDTH * ShadowMapCoefficient, WINDOW_HEIGHT * ShadowMapCoefficient);
+	shadowMappingBlurShader->setVec3("ScaleU", glm::vec3(0.0f, 1.0f / (WINDOW_HEIGHT * ShadowMapCoefficient), 0.0f));
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, blurMap);
+	renderQuad();
+}
+
+void renderShadows() {
+	shadowMappingDisplayShader->use();
+	// then render scene as normal with shadow mapping (using depth map)
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
+	float near_plane = 1.0f, far_plane = 30;
+	glm::mat4 lightSpaceMatrix;
+	CalcLightSpaceMatrix(near_plane, far_plane, lightPos, lightSpaceMatrix);
+	shadowMappingDisplayShader->setVec3("lightPos", lightPos);
+	shadowMappingDisplayShader->setVec3("viewPos", cam.getPosition());
+	shadowMappingDisplayShader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+
+	
+	glCullFace(GL_BACK);
+	renderShadowScene(shadowMappingDisplayShader);
+}
+
+void renderDebug() {
+	glClear(GL_DEPTH_BUFFER_BIT);
+	debugShader->use();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+	debugShader->setFloat("near_plane", 1);
+	debugShader->setFloat("far_plane", 30);
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	renderQuad();
+}
+
 void display()
 {
 	
@@ -608,6 +845,7 @@ void display()
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
+	/*
 	marchingCubesShader->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, densityTextureA);
@@ -782,6 +1020,15 @@ void display()
 	glDisableVertexAttribArray(3);	
 	currentTFB = currentVB;
 	currentVB = (currentTFB + 1) & 1;
+	*/
+	
+	//Shadow Pass		
+	glCullFace(GL_FRONT);
+	renderDepth();
+	blurDepth();
+	glCullFace(GL_BACK);
+	renderShadows();
+	//renderDebug();
 	glutSwapBuffers();
 }
 
@@ -789,7 +1036,7 @@ void CalcLightSpaceMatrix(float near_plane, float far_plane, glm::vec3 pos, glm:
 {
 	glm::mat4 lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, near_plane, far_plane);
 	glm::mat4 lightView = lookAt(pos,
-	                             glm::vec3(0.0f, 0.0f, 0.0f),
+	                             glm::vec3(-10, 0.0f, 0.0f),
 	                             glm::vec3(0.0f, 1.0f, 0.0f));
 	lightSpaceMatrix = lightProjection * lightView;
 }

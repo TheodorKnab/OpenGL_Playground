@@ -25,3 +25,7 @@
 void geometry();
 
 void CalcLightSpaceMatrix(float near_plane, float far_plane, glm::vec3 pos, glm::mat4& lightSpaceMatrix);
+
+void renderShadowScene();
+
+void drawCube(Shader* shader);
