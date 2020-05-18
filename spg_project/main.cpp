@@ -150,10 +150,10 @@ Shader* shadowMappingDepthShader;
 Shader* shadowMappingBlurShader;
 Shader* shadowMappingDisplayShader;
 
-float ShadowMapCoefficient = 0.5f;
+float ShadowMapCoefficient = 1;
 unsigned int SHADOW_WIDTH = WINDOW_WIDTH* ShadowMapCoefficient;
 unsigned int SHADOW_HEIGHT = WINDOW_HEIGHT * ShadowMapCoefficient;
-float BLUR_STRENGTH = 0.5f;
+float BLUR_STRENGTH = 0.25f;
 
 unsigned int depthMap;
 unsigned int depthColorMap;
@@ -664,18 +664,23 @@ void renderShadowScene(Shader* shader)
 	renderQuad();
 	//Cube
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(-20, 0, 2));
+	model = glm::translate(model, glm::vec3(-18, 0, 2));
 	model = glm::translate(model, glm::vec3(0, glm::sin(oldTimeSinceStart / 1000.f), 0));
 	shader->setMat4("model", model);
 	renderCube();
 
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(-19, -1, -1.5));
+	model = glm::translate(model, glm::vec3(-13, -1, -1.5));
 	shader->setMat4("model", model);
 	renderCube();
 
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(-21, 4, -1));
+	model = glm::translate(model, glm::vec3(-20, 4, -1));
+	shader->setMat4("model", model);
+	renderCube();
+	
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-17, -3, 1));
 	shader->setMat4("model", model);
 	renderCube();
 }
@@ -701,24 +706,54 @@ void blurDepth() {
 	glViewport(0, 0, WINDOW_WIDTH * ShadowMapCoefficient * BLUR_STRENGTH, WINDOW_HEIGHT * ShadowMapCoefficient * BLUR_STRENGTH);
 	shadowMappingBlurShader->use();
 	shadowMappingBlurShader->setVec3("resolution", glm::vec3(WINDOW_WIDTH * ShadowMapCoefficient * BLUR_STRENGTH, WINDOW_HEIGHT * ShadowMapCoefficient * BLUR_STRENGTH, 0.0f));
-	shadowMappingBlurShader->setVec3("direction", glm::vec3(0, 1.0f,0.0f));
+	shadowMappingBlurShader->setVec3("direction", glm::vec3(1, 0,0.0f));
 	//set textureSource (sampler2D uniform) to 0
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	
-	//Drawing quad 
+	////Drawing quad 
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(0, 0, -5));
+	//renderShadowScene(shadowMappingBlurShader);
 	renderQuad();
 
-	 // Bluring horizontally
+	
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glViewport(0, 0, WINDOW_WIDTH * ShadowMapCoefficient, WINDOW_HEIGHT * ShadowMapCoefficient);
 	shadowMappingBlurShader->setVec3("resolution", glm::vec3(WINDOW_WIDTH * ShadowMapCoefficient, WINDOW_HEIGHT * ShadowMapCoefficient, 0.0f));
-	shadowMappingBlurShader->setVec3("direction", glm::vec3(1.0f, 0, 0.0f));
+	shadowMappingBlurShader->setVec3("direction", glm::vec3(0, 1, 0.0f));
 	glBindTexture(GL_TEXTURE_2D, blurMap);
 	renderQuad();
+	
+	// Bluring horizontally
+
+	glBindFramebuffer(GL_FRAMEBUFFER, blurMapFBO);
+	glViewport(0, 0, WINDOW_WIDTH * ShadowMapCoefficient * BLUR_STRENGTH, WINDOW_HEIGHT * ShadowMapCoefficient * BLUR_STRENGTH);
+	shadowMappingBlurShader->use();
+	shadowMappingBlurShader->setVec3("resolution", glm::vec3(WINDOW_WIDTH * ShadowMapCoefficient * BLUR_STRENGTH, WINDOW_HEIGHT * ShadowMapCoefficient * BLUR_STRENGTH, 0.0f));
+	shadowMappingBlurShader->setVec3("direction", glm::vec3(0, 1, 0.0f));
+	//set textureSource (sampler2D uniform) to 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
+
+	////Drawing quad 
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(0, 0, -5));
+	//renderShadowScene(shadowMappingBlurShader);
+	renderQuad();
+
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glViewport(0, 0, WINDOW_WIDTH * ShadowMapCoefficient, WINDOW_HEIGHT * ShadowMapCoefficient);
+	shadowMappingBlurShader->setVec3("resolution", glm::vec3(WINDOW_WIDTH * ShadowMapCoefficient, WINDOW_HEIGHT * ShadowMapCoefficient, 0.0f));
+	shadowMappingBlurShader->setVec3("direction", glm::vec3(1, 0, 0.0f));
+	glBindTexture(GL_TEXTURE_2D, blurMap);
+	renderQuad();
+
 }
 
 void renderShadows() {
@@ -840,7 +875,7 @@ void display()
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
-	/*
+	
 	marchingCubesShader->use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, densityTextureA);
@@ -1009,21 +1044,21 @@ void display()
 	glEnableVertexAttribArray(3);
 	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(particleStruct), (void*)(sizeof(float) * 7));
 	glDrawTransformFeedback(GL_POINTS, particleTransformFeedbackBuffer[currentTFB]);
-	//glDrawArrays(GL_POINTS, 0, 6);
+	glDrawArrays(GL_POINTS, 0, 6);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(3);	
 	currentTFB = currentVB;
 	currentVB = (currentTFB + 1) & 1;
-	*/
+	
 	
 	//Shadow Pass		
 	glCullFace(GL_FRONT);
 	renderDepth();
 	blurDepth();
+	blurDepth();
 	glCullFace(GL_BACK);
 	renderShadows();
-	//renderDebug();
 	glutSwapBuffers();
 }
 
