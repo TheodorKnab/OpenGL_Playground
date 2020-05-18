@@ -1,7 +1,7 @@
 #include "main.h"
 
-#define DEFAULT_WIDTH 1240
-#define DEFAULT_HEIGHT 720
+#define DEFAULT_WIDTH 1500
+#define DEFAULT_HEIGHT 1000	
 
 int WINDOW_WIDTH = DEFAULT_WIDTH;
 int WINDOW_HEIGHT = DEFAULT_HEIGHT;
@@ -150,10 +150,10 @@ Shader* shadowMappingDepthShader;
 Shader* shadowMappingBlurShader;
 Shader* shadowMappingDisplayShader;
 
-float ShadowMapCoefficient = 4;
+float ShadowMapCoefficient = 0.5f;
 unsigned int SHADOW_WIDTH = WINDOW_WIDTH* ShadowMapCoefficient;
 unsigned int SHADOW_HEIGHT = WINDOW_HEIGHT * ShadowMapCoefficient;
-const float BLUR_STRENGTH = 0.5f;
+float BLUR_STRENGTH = 0.5f;
 
 unsigned int depthMap;
 unsigned int depthColorMap;
@@ -696,31 +696,27 @@ void renderDepth() {
 }
 
 void blurDepth() {
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, blurMapFBO);
+	// Bluring vertically
+	glBindFramebuffer(GL_FRAMEBUFFER, blurMapFBO);
 	glViewport(0, 0, WINDOW_WIDTH * ShadowMapCoefficient * BLUR_STRENGTH, WINDOW_HEIGHT * ShadowMapCoefficient * BLUR_STRENGTH);
 	shadowMappingBlurShader->use();
-	shadowMappingBlurShader->setVec3("ScaleU", glm::vec3(1.0f / (WINDOW_WIDTH * ShadowMapCoefficient * BLUR_STRENGTH), 0.0f,0.0f));
+	shadowMappingBlurShader->setVec3("resolution", glm::vec3(WINDOW_WIDTH * ShadowMapCoefficient * BLUR_STRENGTH, WINDOW_HEIGHT * ShadowMapCoefficient * BLUR_STRENGTH, 0.0f));
+	shadowMappingBlurShader->setVec3("direction", glm::vec3(0, 1.0f,0.0f));
 	//set textureSource (sampler2D uniform) to 0
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
 
-	//Preparing to draw quad
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(-WINDOW_WIDTH / 2, WINDOW_WIDTH / 2, -WINDOW_HEIGHT / 2, WINDOW_HEIGHT / 2, 1, 20);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
+	
 	//Drawing quad 
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(0, 0, -5));
 	renderQuad();
 
-	 // Bluring vertically
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, depthMapFBO);
+	 // Bluring horizontally
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glViewport(0, 0, WINDOW_WIDTH * ShadowMapCoefficient, WINDOW_HEIGHT * ShadowMapCoefficient);
-	shadowMappingBlurShader->setVec3("ScaleU", glm::vec3(0.0f, 1.0f / (WINDOW_HEIGHT * ShadowMapCoefficient), 0.0f));
-	glActiveTexture(GL_TEXTURE0);
+	shadowMappingBlurShader->setVec3("resolution", glm::vec3(WINDOW_WIDTH * ShadowMapCoefficient, WINDOW_HEIGHT * ShadowMapCoefficient, 0.0f));
+	shadowMappingBlurShader->setVec3("direction", glm::vec3(1.0f, 0, 0.0f));
 	glBindTexture(GL_TEXTURE_2D, blurMap);
 	renderQuad();
 }
@@ -760,7 +756,6 @@ void renderDebug() {
 
 void display()
 {
-	
 	float near_plane = 0.1f, far_plane = 300;
 
 	//camera position depended texture changes
@@ -1034,9 +1029,9 @@ void display()
 
 void CalcLightSpaceMatrix(float near_plane, float far_plane, glm::vec3 pos, glm::mat4& lightSpaceMatrix)
 {
-	glm::mat4 lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, near_plane, far_plane);
+	glm::mat4 lightProjection = glm::ortho(-11.0f, 11.0f, -11.f, 11.f, near_plane, far_plane);
 	glm::mat4 lightView = lookAt(pos,
-	                             glm::vec3(-10, 0.0f, 0.0f),
+	                             glm::vec3(-15, 1.0f, 0.0f),
 	                             glm::vec3(0.0f, 1.0f, 0.0f));
 	lightSpaceMatrix = lightProjection * lightView;
 }
