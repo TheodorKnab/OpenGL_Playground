@@ -24,6 +24,5 @@ vec4 blur13(vec4 color, sampler2D image, vec2 uv, vec2 resolution, vec2 directio
 void main()
 {
 	FragColor = blur13(vec4(0), textureSource, texCoords.xy, resolution.xy, direction.xy);
-
 }
 
