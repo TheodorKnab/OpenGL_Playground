@@ -1,4 +1,4 @@
-# Combined repository for my computer grapics related university modules
+# Combined repository for computer grapics related university modules
 Containes:
 - Quaternion based camera, can do dolly/tracking shots via lerp & slerp
 - Marching cubes of a 3D noise texture using compute shaders
